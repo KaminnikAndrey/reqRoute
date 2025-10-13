@@ -1,0 +1,16 @@
+.titleFrom{
+    font-weight: 700;
+    font-size: 1rem;
+    position: relative;
+    margin-left: 15px;
+}
+.titleFrom::after{
+    position: absolute;
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    background-color: #EF3124;
+    top: 9px;
+    left: -13px;
+}
