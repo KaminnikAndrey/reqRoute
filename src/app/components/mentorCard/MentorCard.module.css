@@ -1,0 +1,109 @@
+.mentorCard {
+    border-radius: 12px;
+    border: 1px solid #d9d9d9;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    transition: all 0.3s;
+    height: 50px;
+    background: #fff;
+    margin-bottom: 10px;
+}
+
+.mentorCard:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: #bfbfbf;
+}
+
+.mentorCardContent {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 10px;
+}
+
+.mentorInfo {
+    flex: 1;
+    padding-right: 24px;
+}
+
+.accessText {
+    font-size: 12px;
+    color: #6B7280;
+    font-weight: 400;
+    height: 16px;
+}
+
+.mentorDetails{
+    display: flex;
+    font-weight: 700;
+    width: 296px;
+    font-size: 11.5px;
+
+}
+
+.capabilitiesText{
+    font-weight: 400;
+}
+
+/* Кнопка справа - ТОЧНЫЕ СТИЛИ ИЗ FIGMA */
+.mentorAction {
+    flex-shrink: 0;
+}
+
+.mentorButton {
+    /* Layout */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    /* Размеры */
+    width: auto; /* Hug content */
+    min-width: 55px; /* Минимальная ширина как в Figma */
+    height: 23px; /* Точная высота */
+
+    /* Скругление */
+    border-radius: 999px; /* Полное скругление */
+
+    /* Отступы */
+    padding: 5px 10px; /* Top/Bottom: 5px, Left/Right: 10px */
+
+    /* Цвет */
+    background-color: #EF3124; /* Точный цвет из Figma */
+    color: white;
+
+    /* Текст */
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 400; /* Regular */
+    font-style: normal;
+    font-size: 12px; /* Точный размер шрифта */
+    line-height: 100%; /* Точная высота строки */
+    letter-spacing: 0%;
+    text-align: center;
+
+    /* Border */
+    border: none;
+
+    /* Курсор */
+    cursor: pointer;
+
+    /* Тень и эффекты */
+    box-shadow: none;
+    transition: all 0.2s ease;
+
+    /* Выравнивание текста */
+    vertical-align: middle;
+}
+
+.mentorButton:hover {
+    background-color: #d42a1e; /* Немного темнее при наведении */
+    transform: translateY(-1px);
+}
+
+.mentorButton:active {
+    background-color: #c0251b;
+    transform: translateY(0);
+}
+
+.mentorButton:focus {
+    outline: 2px solid rgba(239, 49, 36, 0.3);
+    outline-offset: 2px;
+}

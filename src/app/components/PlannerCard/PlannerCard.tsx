@@ -22,7 +22,7 @@ export default function PlannerCard({
                 boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
                 border: '1px solid #f0f0f0'
             }}
-            bodyStyle={{ padding: 15 }}
+            // bodyStyle={{ padding: 15 }}
         >
             <div style={{
                 width: '22px',

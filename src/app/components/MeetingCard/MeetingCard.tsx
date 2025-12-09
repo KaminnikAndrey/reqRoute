@@ -13,7 +13,7 @@ export default function MeetingCard() {
                 boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
                 border: "1px solid #E9ECEF"
             }}
-            bodyStyle={{ padding: 20 }}
+            // bodyStyle={{ padding: 20 }}
         >
             <div className={styles.wrap} style={{marginBottom: 10}}>
                 <Text style={{fontSize: "16px", fontWeight: 700}}>Ближайший созвон</Text>

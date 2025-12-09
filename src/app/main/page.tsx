@@ -62,17 +62,17 @@ export default function main() {
                 <div className={styles.wrap}>
                     <p className={styles.text}>© ReqRoute · 2025</p>
                     <p className={styles.text}>
-                        <Link href="/" className={styles.linkFooter}/>
-                            Главная
-                        <Link/>
-                        &nbsp;·&nbsp;
-                        <Link className={styles.linkFooter} href="/"/>
-                            О проекте
-                        <Link/>
-                        &nbsp;·&nbsp;
-                        <Link className={styles.linkFooter} href="/"/>
-                            Политика
-                        <Link/>
+                        {/*<text href="/" className={styles.linkFooter}/>*/}
+                        {/*    Главная*/}
+                        {/*<Link/>*/}
+                        {/*&nbsp;·&nbsp;*/}
+                        {/*<Link className={styles.linkFooter} href="/"/>*/}
+                        {/*    О проекте*/}
+                        {/*<Link/>*/}
+                        {/*&nbsp;·&nbsp;*/}
+                        {/*<Link className={styles.linkFooter} href="/"/>*/}
+                        {/*    Политика*/}
+                        {/*<Link/>*/}
                     </p>
                 </div>
             </div>

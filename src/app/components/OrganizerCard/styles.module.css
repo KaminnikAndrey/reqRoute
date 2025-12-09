@@ -1,0 +1,190 @@
+/* ... предыдущие стили ... */
+
+/* 4 БЛОК: Секция организатора */
+.organizerSection {
+    width: 100%;
+    padding: 0 15px 15px 15px;
+}
+
+.sectionTitle {
+    margin-bottom: 8px;
+}
+
+.sectionTitleText {
+    font-size: 14px;
+    font-weight: 600;
+    color: #262626;
+    margin: 0;
+}
+
+/* Карточка организатора */
+.organizerCard {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #f0f0f0;
+    transition: all 0.3s ease;
+}
+
+/* Левая часть: информация */
+.organizerInfo {
+    display: flex;
+    flex-direction: column;
+}
+
+.organizerName {
+    font-size: 14px;
+    font-weight: 600;
+    color: #262626;
+    margin: 0;
+    transition: color 0.3s ease;
+}
+
+.organizerRole {
+    font-size: 12px;
+    color: #8c8c8c;
+    margin: 0;
+    transition: color 0.3s ease;
+}
+
+/* Правая часть: статус */
+.organizerStatus {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.statusIndicator {
+    width: 16px;
+    height: 16px;
+    border-radius: 2.5px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    /* Сброс стилей кнопки */
+    background: none;
+    border: none;
+    outline: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.statusIndicator:hover {
+    transform: scale(1.1);
+}
+
+.statusIndicator:active {
+    transform: scale(0.95);
+}
+
+.statusIndicator:focus {
+    outline: 2px solid #1890ff;
+    outline-offset: 2px;
+}
+
+/* Зеленый квадрат для присутствующих */
+.statusIndicator.present {
+    background-color: #16A34A;
+    border: none;
+    animation: pulseGreen 0.5s ease;
+}
+
+.statusIndicator.present:hover {
+    background-color: #15803d;
+}
+
+/* Красная рамка для отсутствующих */
+.statusIndicator.absent {
+    background-color: transparent;
+    border: 1px solid #ff4d4f;
+}
+
+.statusIndicator.absent:hover {
+    border-color: #dc2626;
+    background-color: rgba(255, 77, 79, 0.05);
+}
+
+/* Анимация для зеленого квадрата */
+@keyframes pulseGreen {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 4px rgba(22, 163, 74, 0);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(22, 163, 74, 0);
+    }
+}
+
+/* Анимированная галочка */
+.checkmark {
+    position: relative;
+    width: 8px;
+    height: 8px;
+    transform: rotate(-45deg);
+    animation: checkmarkAppear 0.3s ease forwards;
+}
+
+.checkmarkLine1 {
+    position: absolute;
+    width: 2px;
+    height: 0;
+    background-color: white;
+    bottom: 0;
+    left: 0;
+    transform-origin: bottom left;
+    animation: drawLine1 0.2s 0.1s ease forwards;
+}
+
+.checkmarkLine2 {
+    position: absolute;
+    width: 0;
+    height: 2px;
+    background-color: white;
+    bottom: 0;
+    left: 0;
+    transform-origin: bottom left;
+    animation: drawLine2 0.2s 0.3s ease forwards;
+}
+
+
+@keyframes checkmarkAppear {
+    0% {
+        opacity: 0;
+        transform: rotate(-45deg) scale(0.5);
+    }
+    100% {
+        opacity: 1;
+        transform: rotate(-45deg) scale(1);
+    }
+}
+
+/* Текст статуса */
+.statusLabel {
+    font-size: 14px;
+    font-weight: 400;
+    margin: 0;
+    white-space: nowrap;
+    user-select: none;
+    transition: all 0.3s ease;
+}
+
+.statusLabel.presentText {
+    color: #16A34A;
+    animation: textPulse 0.5s ease;
+}
+
+.statusLabel.absentText {
+    color: #ff4d4f;
+}

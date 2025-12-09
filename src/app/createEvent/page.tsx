@@ -35,7 +35,7 @@ export default function createEvent() {
                 <SpeakersForm/>
                 <IntegrationFilesForm/>
                 <RegistrationForm/>
-                <ChecksForm/>
+                {/*<ChecksForm/>*/}
                 <span style={{
                     display: 'flex',
                     flexDirection: 'row',

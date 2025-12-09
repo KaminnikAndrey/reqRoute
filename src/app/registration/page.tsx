@@ -192,14 +192,6 @@ export default function Registration() {
 
                 <span className={styles.divider}>или</span>
 
-                <div className={styles.btnWrap}>
-                    <button type="button" className={styles.socialButton}>
-                        Войти через Google
-                    </button>
-                    <button type="button" className={styles.socialButton}>
-                        Войти через GitHub
-                    </button>
-                </div>
 
                 <div className={styles.footer}>
                     <span className={styles.text}>© ReqRoute · 2025</span>

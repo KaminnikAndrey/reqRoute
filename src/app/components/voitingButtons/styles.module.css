@@ -1,0 +1,90 @@
+.votingButtonsContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 20px 0;
+}
+
+.votingButton {
+    /* Layout */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    /* Размеры */
+    width: auto; /* Hug content */
+    min-width: 108px; /* Минимальная ширина как в Figma */
+    height: 29px; /* Точная высота */
+
+    /* Скругление */
+    border-radius: 999px; /* Полное скругление */
+
+    /* Граница */
+    border: 1px solid #EF3124;
+
+    /* Отступы */
+    padding: 7px 11px; /* Top/Bottom: 7px, Left/Right: 11px */
+
+    /* Цвета (неактивное состояние) */
+    background-color: #FFFFFF; /* Белый фон */
+    color: #EF3124; /* Красный текст */
+
+    /* Текст */
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 14px;
+    line-height: 100%;
+    letter-spacing: 0%;
+    text-align: center;
+
+    /* Курсор */
+    cursor: pointer;
+
+    /* Переход */
+    transition: all 0.2s ease;
+
+    /* Убираем стандартные стили */
+    outline: none;
+}
+
+/* Активное состояние */
+.votingButton.active {
+    background-color: #EF3124; /* Красный фон */
+    color: #FFFFFF; /* Белый текст */
+}
+
+/* Ховер эффект */
+.votingButton:hover:not(.active) {
+    background-color: rgba(239, 49, 36, 0.05);
+}
+
+.votingButton.active:hover {
+    background-color: #d42a1e; /* Темнее красный */
+    border-color: #d42a1e;
+}
+
+/* Фокус состояние */
+.votingButton:focus {
+    outline: 2px solid rgba(239, 49, 36, 0.3);
+    outline-offset: 2px;
+}
+
+/* Активное состояние при фокусе */
+.votingButton.active:focus {
+    outline-color: rgba(255, 255, 255, 0.5);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .votingButtonsContainer {
+        gap: 8px;
+        justify-content: center;
+    }
+
+    .votingButton {
+        min-width: 90px;
+        padding: 7px 8px;
+        font-size: 13px;
+    }
+}

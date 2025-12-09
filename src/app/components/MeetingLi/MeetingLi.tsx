@@ -15,7 +15,7 @@ interface MeetingCardProps {
 export default function MeetingLi({
                                         date,
                                         time,
-                                        title,
+                                           title,
                                         platform,
                                         detailsLink = "#"
                                     }: MeetingCardProps) {
@@ -29,7 +29,7 @@ export default function MeetingLi({
                 boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
                 border: '1px solid #f0f0f0'
             }}
-            bodyStyle={{ padding: 16 }}
+            // bodyStyle={{ padding: 16 }}
         >
             {/* Дата и время */}
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8, gap: 8 }}>

@@ -47,25 +47,11 @@ export default function EventPassportForm() {
                     style={{marginBottom: "7px"}}
                 >
                     <TextArea
-                        placeholder="Опишите цель мероприятия, целевую аудиторию и ключевые темы..."
+                        placeholder="Цель, аудитория"
                         rows={4}
                         style={{ borderRadius: 8, fontWeight: 400, fontSize: 14, resize: 'none' }}
 
 
-                    />
-                </Form.Item>
-
-                {/* ID встречи */}
-                <Form.Item
-                    label="ID встречи"
-                    name="eventId"
-                    rules={[{ required: true, message: 'Введите ID встречи' }]}
-                    style={{marginBottom: "0"}}
-                >
-                    <Input
-                        placeholder="RR-317"
-                        size="large"
-                        style={{ borderRadius: 8, fontWeight: 400, fontSize: 14}}
                     />
                 </Form.Item>
             </Form>
