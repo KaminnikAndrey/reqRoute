@@ -1,3 +1,4 @@
+// src/components/votingCard/VotingCard.tsx
 'use client'
 
 import { useState } from 'react'
@@ -15,6 +16,7 @@ interface Comment {
 }
 
 interface VotingCardProps {
+    id: number
     caseName: string
     track: string
     author: string
@@ -26,11 +28,12 @@ interface VotingCardProps {
     dislikes: number
     comments: Comment[]
     userVote?: 'like' | 'dislike' | null
-    onVote?: (vote: 'like' | 'dislike') => void
-    onAddComment?: (comment: string) => void
+    onVote?: (id: number, vote: 'like' | 'dislike') => void
+    onAddComment?: (id: number, comment: string) => void
 }
 
 const VotingCard: React.FC<VotingCardProps> = ({
+                                                   id,
                                                    caseName = 'Мониторинг заявок',
                                                    track = 'Трек',
                                                    author = 'Команда ReqRoute',
@@ -47,17 +50,25 @@ const VotingCard: React.FC<VotingCardProps> = ({
                                                }) => {
     const [isCommentsExpanded, setIsCommentsExpanded] = useState(false)
     const [newComment, setNewComment] = useState('')
+    const [commentLoading, setCommentLoading] = useState(false)
 
     const handleVote = (vote: 'like' | 'dislike') => {
         if (onVote) {
-            onVote(vote)
+            onVote(id, vote)
         }
     }
 
-    const handleAddComment = () => {
-        if (newComment.trim() && onAddComment) {
-            onAddComment(newComment)
+    const handleAddComment = async () => {
+        if (!newComment.trim() || !onAddComment) return
+
+        setCommentLoading(true)
+        try {
+            await onAddComment(id, newComment)
             setNewComment('')
+        } catch (error) {
+            console.error('Ошибка при добавлении комментария:', error)
+        } finally {
+            setCommentLoading(false)
         }
     }
 
@@ -65,36 +76,55 @@ const VotingCard: React.FC<VotingCardProps> = ({
         setIsCommentsExpanded(!isCommentsExpanded)
     }
 
+    const getStatusColor = () => {
+        switch (status) {
+            case 'На голосовании':
+                return styles.voting
+            case 'Отобран':
+                return styles.selected
+            case 'В разработке':
+                return styles.inProgress
+            case 'Черновик':
+                return styles.draft
+            case 'Предложение':
+                return styles.proposal
+            default:
+                return styles.voting
+        }
+    }
+
     return (
         <div className={styles.votingCard}>
-            {/* 1. Верхний блок: название, трек, автор и статус */}
             <div className={styles.header}>
                 <div className={styles.caseInfo}>
-                    <h3 className={styles.caseName}>Кейс :«{caseName}»</h3>
+                    <h3 className={styles.caseName}>Кейс: «{caseName}»</h3>
+                    <div className={styles.metaInfo}>
+                        <span className={styles.author}>Автор: <br />{author}</span>
+                        <span className={styles.author}>Трек: <br />{track}</span>
+                    </div>
                 </div>
                 <div className={styles.statusContainer}>
-                    <span className={`${styles.status} ${styles.voting}`}>
+                    <span className={styles.status}>
                         {status}
                     </span>
                 </div>
             </div>
-            <div className={styles.metaInfo}>
-                <span className={styles.author}>Автор: {author}</span>
-                <span className={styles.separator}>•</span>
-                <span className={styles.author}>Трек: {track}</span>
-            </div>
 
-            {/* 2. Описание */}
             <div className={styles.description}>
                 <p>{description}</p>
             </div>
 
-            {/* 3. Рейтинг и голосование */}
             <div className={styles.ratingSection}>
                 <div className={styles.ratingInfo}>
                     <div className={styles.ratingItem}>
                         <span className={styles.ratingLabel}>Текущий рейтинг:</span>
-                        <span className={styles.ratingValue}>{currentRating}%</span>
+                        <div className={styles.ratingBarContainer}>
+                            <div
+                                className={styles.ratingBar}
+                                style={{ width: `${Math.min(currentRating, 100)}%` }}
+                            />
+                            <span className={styles.ratingValue}>{currentRating}%</span>
+                        </div>
                     </div>
                     <div className={styles.ratingItem}>
                         <span className={styles.ratingLabel}>Порог прохождения:</span>
@@ -104,15 +134,17 @@ const VotingCard: React.FC<VotingCardProps> = ({
 
                 <div className={styles.votingButtons}>
                     <button
-                        className={`${styles.voteButton} ${userVote === 'like' ? styles.active : ''}`}
+                        className={`${styles.voteButton} ${userVote === 'like' ? styles.activeLike : ''}`}
                         onClick={() => handleVote('like')}
+                        disabled={status !== 'На голосовании'}
                     >
                         <span className={styles.icon}>👍</span>
                         <span className={styles.count}>{likes}</span>
                     </button>
                     <button
-                        className={`${styles.voteButton} ${userVote === 'dislike' ? styles.active : ''}`}
+                        className={`${styles.voteButton} ${userVote === 'dislike' ? styles.activeDislike : ''}`}
                         onClick={() => handleVote('dislike')}
+                        disabled={status !== 'На голосовании'}
                     >
                         <span className={styles.icon}>👎</span>
                         <span className={styles.count}>{dislikes}</span>
@@ -120,20 +152,21 @@ const VotingCard: React.FC<VotingCardProps> = ({
                 </div>
             </div>
 
-            {/* 4. Комментарии менторов */}
             <div className={styles.commentsSection}>
                 <div className={styles.commentsHeader}>
                     <h4 className={styles.commentsTitle}>
                         Комментарии менторов ({comments.length})
                     </h4>
-                    <Button
-                        type="text"
-                        icon={isCommentsExpanded ? <CaretUpOutlined /> : <CaretDownOutlined />}
-                        onClick={toggleComments}
-                        className={styles.expandButton}
-                    >
-                        {isCommentsExpanded ? 'Свернуть' : 'Развернуть'}
-                    </Button>
+                    {comments.length > 0 && (
+                        <Button
+                            type="text"
+                            icon={isCommentsExpanded ? <CaretUpOutlined /> : <CaretDownOutlined />}
+                            onClick={toggleComments}
+                            className={styles.expandButton}
+                        >
+                            {isCommentsExpanded ? 'Свернуть' : 'Развернуть'}
+                        </Button>
+                    )}
                 </div>
 
                 {isCommentsExpanded && (
@@ -156,7 +189,6 @@ const VotingCard: React.FC<VotingCardProps> = ({
                 )}
             </div>
 
-            {/* 5. Поле для добавления комментария */}
             <div className={styles.addCommentSection}>
                 <TextArea
                     rows={3}
@@ -164,15 +196,15 @@ const VotingCard: React.FC<VotingCardProps> = ({
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
                     className={styles.commentInput}
-                    style={{ resize: 'vertical', minHeight: '80px', maxHeight: '200px' }}
+                    disabled={commentLoading}
                 />
                 <div className={styles.commentActions}>
                     <button
                         className={styles.sendButton}
                         onClick={handleAddComment}
-                        disabled={!newComment.trim()}
+                        disabled={!newComment.trim() || commentLoading}
                     >
-                        Отправить
+                        {commentLoading ? 'Отправка...' : 'Отправить'}
                     </button>
                 </div>
             </div>

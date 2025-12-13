@@ -1,12 +1,10 @@
-import type { Metadata } from 'next'
+// src/app/layout.tsx (главный layout)
+'use client'
+
 import { Inter } from 'next/font/google'
 import './globals.css'
-const inter = Inter({ subsets: ['latin'] })
 
-export const metadata: Metadata = {
-    title: 'Мое приложение',
-    description: 'Приложение с навигацией',
-}
+const inter = Inter({ subsets: ['latin', 'cyrillic'] })
 
 export default function RootLayout({
                                        children,
@@ -16,7 +14,9 @@ export default function RootLayout({
     return (
         <html lang="ru">
         <body className={inter.className}>
-        <main>{children}</main>
+        <AuthProvider>
+            {children}
+        </AuthProvider>
         </body>
         </html>
     )

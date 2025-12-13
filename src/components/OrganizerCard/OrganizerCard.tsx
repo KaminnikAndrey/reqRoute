@@ -1,43 +1,52 @@
+// src/components/OrganizerCard/OrganizerCard.tsx
 'use client'
 
 import { Typography } from 'antd'
-import { useState, forwardRef, useImperativeHandle, useEffect } from 'react'
+import { forwardRef, useImperativeHandle } from 'react'
 import styles from "./styles.module.css"
+import { useMeetingStore } from '@/store/useMeetingStore'
 
 const { Text } = Typography
 
 interface OrganizerCardProps {
+    personId: number;
     name: string;
     role: string;
-    initialIsPresent: boolean;
-    forcePresent?: boolean | null;
     onToggle?: (isPresent: boolean) => void;
 }
 
 const OrganizerCard = forwardRef(function OrganizerCard({
+                                                            personId,
                                                             name,
                                                             role,
-                                                            initialIsPresent,
-                                                            forcePresent = null,
                                                             onToggle
                                                         }: OrganizerCardProps, ref) {
-    const [isPresent, setIsPresent] = useState(initialIsPresent)
+    // Получаем данные и методы из store
+    const organizer = useMeetingStore(state =>
+        state.meeting.people.find(p => p.id === personId && p.type === 'organizer')
+    )
+    const togglePresence = useMeetingStore(state => state.togglePresence)
 
-    // Обновляем состояние при изменении forcePresent
-    useEffect(() => {
-        if (forcePresent !== null) {
-            setIsPresent(forcePresent)
+    if (!organizer) return null
+
+    const isPresent = organizer.isPresent
+
+    const handleToggle = () => {
+        // Обновляем в store
+        togglePresence(personId)
+
+        // Вызываем callback если есть
+        if (onToggle) {
+            onToggle(!isPresent)
         }
-    }, [forcePresent])
-
-    const setPresence = (value: boolean) => {
-        setIsPresent(value)
-        onToggle?.(value)
     }
 
-    // Экспортируем метод для родительского компонента
+    // Экспортируем метод для родительского компонента (для совместимости)
     useImperativeHandle(ref, () => ({
-        setPresence
+        setPresence: (value: boolean) => {
+            // Эта логика теперь в store, но оставляем для совместимости
+            console.log(`Принудительная установка присутствия для организатора ${personId}: ${value}`)
+        }
     }))
 
     return (
@@ -52,7 +61,7 @@ const OrganizerCard = forwardRef(function OrganizerCard({
             <div className={styles.organizerStatus}>
                 <button
                     className={`${styles.statusIndicator} ${isPresent ? styles.present : styles.absent}`}
-                    onClick={() => setPresence(!isPresent)}
+                    onClick={handleToggle}
                     aria-label={isPresent ? 'Отметить как отсутствующего' : 'Отметить как присутствующего'}
                 >
                     {isPresent && (
@@ -69,5 +78,6 @@ const OrganizerCard = forwardRef(function OrganizerCard({
         </div>
     )
 })
+
 
 export default OrganizerCard

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import styles from "./styles.module.css"
 import Link from "next/link";
-import GlobalSearch from "@/app/components/globalSearch/globalSearch";
+import GlobalSearch from "@/components/globalSearch/globalSearch";
 
 export default function Header() {
 

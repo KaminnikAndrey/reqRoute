@@ -1,111 +1,100 @@
+// src/app/minutes/page.tsx (или ваш путь)
 'use client'
 
 import { Card, Typography, Input } from 'antd'
-import { useState, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import styles from "./styles.module.css"
-import Header from "@/app/components/header/Header"
-import OrganizerCard from "@/app/components/OrganizerCard/OrganizerCard";
-import ParticipantCard from "@/app/components/ParticipantCard/ParticipantCard";
+import Header from "@/components/header/Header";
+import OrganizerCard from "@/components/OrganizerCard/OrganizerCard";
+import ParticipantCard from "@/components/ParticipantCard/ParticipantCard";
+import { useMeetingStore } from '@/store/useMeetingStore'
+import { useMeetingApi } from '@/hooks/useMeetingApi'
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 const { Text } = Typography
 const { TextArea } = Input
 
-type MeetingStatus = 'состоялась' | 'перенесена' | 'отмена'
-
-interface OrganizerRef {
-    setPresence: (value: boolean) => void;
-}
-
-interface ParticipantRef {
-    setPresence: (value: boolean) => void;
-    setLate: (value: boolean) => void;
-}
-
 export default function MinutesOfMeeting() {
-    const [activeStatus, setActiveStatus] = useState<MeetingStatus>('состоялась')
-    const [decisions, setDecisions] = useState('')
-    const [comments, setComments] = useState('')
+    // Получаем данные и методы из store
+    const meeting = useMeetingStore(state => state.meeting)
+    const updateStatus = useMeetingStore(state => state.updateStatus)
+    const updateDecisions = useMeetingStore(state => state.updateDecisions)
+    const updateComments = useMeetingStore(state => state.updateComments)
+    const forceMarkAllPresent = useMeetingStore(state => state.forceMarkAllPresent)
+    const forceClearAllChecks = useMeetingStore(state => state.forceClearAllChecks)
 
-    // Состояние для принудительного обновления
-    const [forceAllPresent, setForceAllPresent] = useState<boolean | null>(null)
-    const [forceAllAbsent, setForceAllAbsent] = useState<boolean | null>(null)
+    const getTotalCount = useMeetingStore(state => state.getTotalCount)
+    const getPresentCount = useMeetingStore(state => state.getPresentCount)
+    const getAbsentCount = useMeetingStore(state => state.getAbsentCount)
+    const getOrganizers = useMeetingStore(state => state.getOrganizers)
+    const getParticipants = useMeetingStore(state => state.getParticipants)
 
-    // Ссылки для управления состоянием карточек
-    const organizerRefs = useRef<OrganizerRef[]>([])
-    const participantRefs = useRef<ParticipantRef[]>([])
+    // Получаем методы API
+    const { fetchMeeting, saveMeeting } = useMeetingApi()
 
-    const handleStatusClick = (status: MeetingStatus) => {
-        setActiveStatus(status)
+    // Локальные состояния для текстовых полей
+    const [decisions, setDecisions] = useState(meeting.decisions)
+    const [comments, setComments] = useState(meeting.comments)
+
+    // Загружаем данные при монтировании
+    useEffect(() => {
+        fetchMeeting()
+    }, [fetchMeeting])
+
+    // Синхронизируем локальные состояния с store
+    useEffect(() => {
+        setDecisions(meeting.decisions)
+    }, [meeting.decisions])
+
+    useEffect(() => {
+        setComments(meeting.comments)
+    }, [meeting.comments])
+
+    const handleStatusClick = (status: any) => {
+        updateStatus(status)
     }
 
-    const handleSave = () => {
-        console.log('Сохранение протокола...')
-        // Здесь будет логика сохранения
+    const handleSave = async () => {
+        try {
+            // Сначала обновляем текстовые поля в store
+            updateDecisions(decisions)
+            updateComments(comments)
+
+            // Затем сохраняем
+            await saveMeeting()
+            console.log('✅ Протокол сохранен')
+        } catch (err) {
+            console.error('❌ Ошибка сохранения:', err)
+        }
     }
 
     const handleCancel = () => {
         console.log('Отмена...')
-        // Здесь будет логика отмены
+        // Можно сбросить изменения если нужно
     }
 
     // Функция для отметки всех как присутствующих
     const markAllAsPresent = () => {
-        // Устанавливаем флаг для принудительного обновления
-        setForceAllPresent(true)
-        setForceAllAbsent(null)
-
-        // Вызываем методы установки состояния в каждом компоненте
-        organizerRefs.current.forEach(ref => {
-            if (ref && ref.setPresence) ref.setPresence(true)
-        })
-
-        participantRefs.current.forEach(ref => {
-            if (ref && ref.setPresence) ref.setPresence(true)
-            // Опоздание оставляем как есть, не сбрасываем
-        })
+        forceMarkAllPresent()
     }
 
     // Функция для снятия всех галочек
     const clearAllChecks = () => {
-        // Устанавливаем флаг для принудительного обновления
-        setForceAllPresent(null)
-        setForceAllAbsent(true)
-
-        // Вызываем методы установки состояния в каждом компоненте
-        organizerRefs.current.forEach(ref => {
-            if (ref && ref.setPresence) ref.setPresence(false)
-        })
-
-        participantRefs.current.forEach(ref => {
-            if (ref && ref.setPresence) ref.setPresence(false)
-            if (ref && ref.setLate) ref.setLate(false)
-        })
-    }
-
-    // Обработчики для обновления статистики
-    const handleOrganizerToggle = (isPresent: boolean) => {
-        // Можно обновлять общую статистику если нужно
-        console.log(`Организатор: ${isPresent ? 'присутствует' : 'отсутствует'}`)
-    }
-
-    const handleParticipantTogglePresence = (isPresent: boolean) => {
-        console.log(`Участник: ${isPresent ? 'присутствует' : 'отсутствует'}`)
-    }
-
-    const handleParticipantToggleLate = (isLate: boolean) => {
-        console.log(`Участник: ${isLate ? 'опоздал' : 'не опоздал'}`)
+        forceClearAllChecks()
     }
 
     // Подсчет статистики
-    const totalCount = 2 + 3 // организаторы + участники
-    const presentCount = organizerRefs.current.filter(ref =>
-        ref && (ref as any).isPresent !== false
-    ).length + participantRefs.current.filter(ref =>
-        ref && (ref as any).isPresent === true
-    ).length
-    const absentCount = totalCount - presentCount
+    const totalCount = getTotalCount()
+    const presentCount = getPresentCount()
+    const absentCount = getAbsentCount()
+
+    // Получаем списки участников
+    const organizers = getOrganizers()
+    const participants = getParticipants()
 
     return (
+        <ProtectedRoute>
+
         <div className={styles.center}>
             <div className={styles.wrapper}>
                 <Header />
@@ -120,31 +109,31 @@ export default function MinutesOfMeeting() {
                             <div className={styles.headerLeft}>
                                 <div className={styles.titleSection}>
                                     <Text className={styles.protocolTitle}>
-                                        Протокол встречи
+                                        {meeting.title}
                                     </Text>
                                 </div>
 
                                 <div className={styles.infoSection}>
                                     <div className={styles.teamInfo}>
                                         <Text className={styles.teamName}>
-                                            Команда ReqRoute
+                                            {meeting.teamName}
                                         </Text>
                                     </div>
 
                                     <div className={styles.timeLocationInfo}>
                                         <div className={styles.timeItem}>
                                             <Text className={styles.timeText}>
-                                                Сегодня,
+                                                {meeting.date},
                                             </Text>
                                         </div>
                                         <div className={styles.timeItem}>
                                             <Text className={styles.timeText}>
-                                                18:00–18:45
+                                                {meeting.time}
                                             </Text>
                                         </div>
                                         <div className={styles.timeItem}>
                                             <Text className={styles.timeText}>
-                                                (Екб)
+                                                {meeting.location}
                                             </Text>
                                         </div>
                                     </div>
@@ -160,11 +149,11 @@ export default function MinutesOfMeeting() {
                                     <div className={styles.roomLink}>
                                         <div className={styles.roomLinkTitle}>
                                             <Text strong className={styles.roomLinkText}>
-                                                Контур.Толк
+                                                {meeting.link}
                                             </Text>
                                         </div>
                                         <Text className={styles.roomLinkUrl}>
-                                            kontur.ru/room/
+                                            {meeting.linkUrl}
                                         </Text>
                                     </div>
                                 </div>
@@ -231,67 +220,27 @@ export default function MinutesOfMeeting() {
 
                     <p className={styles.titleFrom}>Организаторы</p>
                     <div className={styles.organizerSection}>
-                        <OrganizerCard
-                            name="Иван Петров"
-                            role="Руководитель проекта"
-                            initialIsPresent={true}
-                            forcePresent={forceAllPresent !== null ? forceAllPresent : forceAllAbsent !== null ? false : null}
-                            ref={el => {
-                                if (el) organizerRefs.current[0] = el
-                            }}
-                            onToggle={handleOrganizerToggle}
-                        />
-                        <OrganizerCard
-                            name="Иван Иван"
-                            role="Дизайнер"
-                            initialIsPresent={true}
-                            forcePresent={forceAllPresent !== null ? forceAllPresent : forceAllAbsent !== null ? false : null}
-                            ref={el => {
-                                if (el) organizerRefs.current[1] = el
-                            }}
-                            onToggle={handleOrganizerToggle}
-                        />
+                        {organizers.map(organizer => (
+                            <OrganizerCard
+                                key={organizer.id}
+                                personId={organizer.id}
+                                name={organizer.name}
+                                role={organizer.role}
+                            />
+                        ))}
                     </div>
 
                     <p className={styles.titleFrom}>Участники</p>
                     <div className={styles.participantsSection}>
                         <div className={styles.participantsList}>
-                            <ParticipantCard
-                                name="Мария Сидорова"
-                                role="Frontend разработчик"
-                                initialIsPresent={true}
-                                initialIsLate={true}
-                                forcePresent={forceAllPresent !== null ? forceAllPresent : forceAllAbsent !== null ? false : null}
-                                ref={el => {
-                                    if (el) participantRefs.current[0] = el
-                                }}
-                                onTogglePresence={handleParticipantTogglePresence}
-                                onToggleLate={handleParticipantToggleLate}
-                            />
-                            <ParticipantCard
-                                name="Алексей Иванов"
-                                role="Backend разработчик"
-                                initialIsPresent={true}
-                                initialIsLate={false}
-                                forcePresent={forceAllPresent !== null ? forceAllPresent : forceAllAbsent !== null ? false : null}
-                                ref={el => {
-                                    if (el) participantRefs.current[1] = el
-                                }}
-                                onTogglePresence={handleParticipantTogglePresence}
-                                onToggleLate={handleParticipantToggleLate}
-                            />
-                            <ParticipantCard
-                                name="Ольга Смирнова"
-                                role="Дизайнер"
-                                initialIsPresent={false}
-                                initialIsLate={false}
-                                forcePresent={forceAllPresent !== null ? forceAllPresent : forceAllAbsent !== null ? false : null}
-                                ref={el => {
-                                    if (el) participantRefs.current[2] = el
-                                }}
-                                onTogglePresence={handleParticipantTogglePresence}
-                                onToggleLate={handleParticipantToggleLate}
-                            />
+                            {participants.map(participant => (
+                                <ParticipantCard
+                                    key={participant.id}
+                                    personId={participant.id}
+                                    name={participant.name}
+                                    role={participant.role}
+                                />
+                            ))}
                         </div>
                     </div>
 
@@ -301,19 +250,19 @@ export default function MinutesOfMeeting() {
                     <div className={styles.meetingStatusSection}>
                         <div className={styles.statusButtonsContainer}>
                             <button
-                                className={`${styles.statusButton} ${activeStatus === 'состоялась' ? styles.statusActive : styles.statusInactive}`}
+                                className={`${styles.statusButton} ${meeting.status === 'состоялась' ? styles.statusActive : styles.statusInactive}`}
                                 onClick={() => handleStatusClick('состоялась')}
                             >
                                 Состоялась
                             </button>
                             <button
-                                className={`${styles.statusButton} ${activeStatus === 'перенесена' ? styles.statusActive : styles.statusInactive}`}
+                                className={`${styles.statusButton} ${meeting.status === 'перенесена' ? styles.statusActive : styles.statusInactive}`}
                                 onClick={() => handleStatusClick('перенесена')}
                             >
                                 Перенесена
                             </button>
                             <button
-                                className={`${styles.statusButton} ${activeStatus === 'отмена' ? styles.statusActive : styles.statusInactive}`}
+                                className={`${styles.statusButton} ${meeting.status === 'отмена' ? styles.statusActive : styles.statusInactive}`}
                                 onClick={() => handleStatusClick('отмена')}
                             >
                                 Отмена
@@ -330,6 +279,7 @@ export default function MinutesOfMeeting() {
                                 placeholder="Опишите принятые решения и следующие шаги..."
                                 value={decisions}
                                 onChange={(e) => setDecisions(e.target.value)}
+                                onBlur={() => updateDecisions(decisions)}
                                 autoSize={{ minRows: 4, maxRows: 8 }}
                             />
                         </div>
@@ -344,6 +294,7 @@ export default function MinutesOfMeeting() {
                                 placeholder="Добавьте заметки, комментарии или вопросы по встрече..."
                                 value={comments}
                                 onChange={(e) => setComments(e.target.value)}
+                                onBlur={() => updateComments(comments)}
                                 autoSize={{ minRows: 4, maxRows: 8 }}
                             />
                         </div>
@@ -370,5 +321,7 @@ export default function MinutesOfMeeting() {
                 </Card>
             </div>
         </div>
-    )
+            </ProtectedRoute>
+
+            )
 }

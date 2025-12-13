@@ -1,448 +1,110 @@
+// src/app/voting/page.tsx
 'use client'
 
-import { useState } from 'react'
-import Header from "@/app/components/header/Header"
-import MentorCard from "@/app/components/mentorCard/mentorCard"
-import VotingButtons from "@/app/components/voitingButtons/VoitingButtons";
-import VotingCard from "@/app/components/votingCard/VotingCard";
+import { useState, useEffect } from 'react'
+
 import styles from "./styles.module.css"
-
-// Тип для комментария
-interface Comment {
-    id: number
-    author: string
-    text: string
-    timestamp: string
-}
-
-// Тип для карточки кейса
-interface CaseCard {
-    id: number
-    caseName: string
-    track: string
-    author: string
-    status: string
-    description: string
-    currentRating: number
-    passingThreshold: number
-    likes: number
-    dislikes: number
-    stage: string // Категория кейса
-    comments: Comment[] // Комментарии для этого кейса
-}
+import Header from "@/components/header/Header";
+import {useCasesStore} from "@/store";
+import {useCasesApi} from "@/hooks/useCases";
+import MentorCard from "@/components/mentorCard/mentorCard";
+import StatsWidget from "@/components/StatsWidget/StatsWidget";
+import VotingButtons from "@/components/voitingButtons/VoitingButtons";
+import VotingCard from "@/components/votingCard/VotingCard";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 export default function Voting() {
     const [selectedStage, setSelectedStage] = useState<string>('На голосовании')
-    const [cases, setCases] = useState<CaseCard[]>([
-        // Кейсы на голосовании (5 кейсов)
-        {
-            id: 1,
-            caseName: 'Мониторинг заявок',
-            track: 'Бизнес-аналитика',
-            author: 'Команда ReqRoute',
-            status: 'На голосовании',
-            description: 'Разработана система автоматического мониторинга заявок в реальном времени с AI-аналитикой. Позволяет отслеживать статусы, прогнозировать сроки выполнения и выявлять аномалии в процессе обработки запросов.',
-            currentRating: 75,
-            passingThreshold: 50,
-            likes: 24,
-            dislikes: 8,
-            stage: 'На голосовании',
-            comments: [
-                {
-                    id: 1,
-                    author: 'Иван Петров',
-                    text: 'Отличный проект! Особенно понравилась система аналитики в реальном времени. Хотелось бы видеть больше интеграций с популярными CRM.',
-                    timestamp: '2 часа назад'
-                },
-                {
-                    id: 2,
-                    author: 'Мария Сидорова',
-                    text: 'Интересное решение, но нужно доработать раздел отчетности. Не хватает кастомных шаблонов отчетов.',
-                    timestamp: '5 часов назад'
-                },
-                {
-                    id: 3,
-                    author: 'Алексей Козлов',
-                    text: 'Поддерживаю! Такая система давно нужна на рынке. Готов помочь с тестированием.',
-                    timestamp: '1 день назад'
-                }
-            ]
-        },
-        {
-            id: 2,
-            caseName: 'Эко-мониторинг промышленных зон',
-            track: 'Экологические технологии',
-            author: 'GreenTech Solutions',
-            status: 'На голосовании',
-            description: 'Комплексная система мониторинга экологических показателей промышленных предприятий. Включает датчики качества воздуха, воды и систему отчетности для регуляторов в реальном времени.',
-            currentRating: 82,
-            passingThreshold: 55,
-            likes: 45,
-            dislikes: 12,
-            stage: 'На голосовании',
-            comments: [
-                {
-                    id: 1,
-                    author: 'Елена Воробьева',
-                    text: 'Очень актуально для промышленных регионов. Важно, что система соответствует всем экологическим стандартам.',
-                    timestamp: '3 часа назад'
-                },
-                {
-                    id: 2,
-                    author: 'Дмитрий Новиков',
-                    text: 'Интересная идея, но какова стоимость внедрения для среднего предприятия?',
-                    timestamp: '1 день назад'
-                }
-            ]
-        },
-        {
-            id: 3,
-            caseName: 'Умное расписание для ВУЗов',
-            track: 'Образовательные технологии',
-            author: 'EduSchedule Pro',
-            status: 'На голосовании',
-            description: 'Система автоматического составления расписания для учебных заведений с учетом преподавательской нагрузки, аудиторного фонда и предпочтений студентов.',
-            currentRating: 68,
-            passingThreshold: 60,
-            likes: 31,
-            dislikes: 6,
-            stage: 'На голосовании',
-            comments: [
-                {
-                    id: 1,
-                    author: 'Ольга Смирнова',
-                    text: 'Как преподаватель могу сказать - такая система сильно упростила бы работу деканатов.',
-                    timestamp: '6 часов назад'
-                }
-            ]
-        },
-        {
-            id: 4,
-            caseName: 'Оптимизация логистики',
-            track: 'Логистика и доставка',
-            author: 'ЛогистПро',
-            status: 'На голосовании',
-            description: 'Инновационное решение для оптимизации маршрутов доставки с использованием машинного обучения. Система учитывает пробки, погодные условия и приоритеты доставки, снижая затраты на 15-20%.',
-            currentRating: 78,
-            passingThreshold: 60,
-            likes: 42,
-            dislikes: 9,
-            stage: 'На голосовании',
-            comments: [
-                {
-                    id: 1,
-                    author: 'Павел Кузнецов',
-                    text: 'Внедрили тестовую версию - уже видим экономию 12% на топливе. Отличный результат!',
-                    timestamp: '8 часов назад'
-                },
-                {
-                    id: 2,
-                    author: 'Анна Морозова',
-                    text: 'Интересно, как система справляется с нестандартными ситуациями на дорогах?',
-                    timestamp: '2 дня назад'
-                }
-            ]
-        },
-        {
-            id: 5,
-            caseName: 'Умная система ирригации',
-            track: 'Сельское хозяйство',
-            author: 'AgroSmart',
-            status: 'На голосовании',
-            description: 'Автоматизированная система полива для сельского хозяйства, использующая данные с датчиков влажности почвы и прогноз погоды. Экономит до 40% воды и увеличивает урожайность на 15%.',
-            currentRating: 89,
-            passingThreshold: 70,
-            likes: 57,
-            dislikes: 7,
-            stage: 'На голосовании',
-            comments: [
-                {
-                    id: 1,
-                    author: 'Сергей Иванов',
-                    text: 'Для засушливых регионов - просто спасение! Уже рекомендовал партнерам.',
-                    timestamp: '1 день назад'
-                },
-                {
-                    id: 2,
-                    author: 'Наталья Петрова',
-                    text: 'Важна адаптация под разные типы почв и культур. Есть ли такая возможность?',
-                    timestamp: '2 дня назад'
-                },
-                {
-                    id: 3,
-                    author: 'Максим Волков',
-                    text: 'Экономия воды впечатляет. Какова окупаемость системы для фермы среднего размера?',
-                    timestamp: '3 дня назад'
-                }
-            ]
-        },
 
-        // Предложения (3 кейса)
-        {
-            id: 6,
-            caseName: 'Телемедицинская платформа',
-            track: 'Медицинские технологии',
-            author: 'MedConnect',
-            status: 'Предложение',
-            description: 'Платформа для удаленных медицинских консультаций с интеграцией медицинских устройств для домашнего мониторинга. Включает AI-помощника для предварительной диагностики.',
-            currentRating: 91,
-            passingThreshold: 75,
-            likes: 0,
-            dislikes: 0,
-            stage: 'Предложения',
-            comments: []
-        },
-        {
-            id: 7,
-            caseName: 'Цифровой HR-ассистент',
-            track: 'HR-технологии',
-            author: 'HR Tech Innovations',
-            status: 'Предложение',
-            description: 'AI-ассистент для автоматизации процессов найма и адаптации сотрудников. Анализирует резюме, проводит первичные собеседования и формирует индивидуальные планы развития для новых сотрудников.',
-            currentRating: 0,
-            passingThreshold: 65,
-            likes: 0,
-            dislikes: 0,
-            stage: 'Предложения',
-            comments: []
-        },
-        {
-            id: 8,
-            caseName: 'Платформа для коллективных инвестиций',
-            track: 'Финтех',
-            author: 'CrowdInvest Pro',
-            status: 'Предложение',
-            description: 'Инвестиционная платформа, позволяющая небольшим инвесторам объединять капитал для участия в крупных проектах. Включает инструменты анализа рисков и автоматизированное управление портфелем.',
-            currentRating: 0,
-            passingThreshold: 70,
-            likes: 0,
-            dislikes: 0,
-            stage: 'Предложения',
-            comments: []
-        },
+    // Получаем данные из store
+    const cases = useCasesStore(state => state.cases)
+    const loading = useCasesStore(state => state.loading)
+    const error = useCasesStore(state => state.error)
+    const getCasesByStage = useCasesStore(state => state.getCasesByStage)
 
-        // Черновики (3 кейса)
-        {
-            id: 9,
-            caseName: 'Система управления умным домом',
-            track: 'Умные города',
-            author: 'SmartHome Systems',
-            status: 'Черновик',
-            description: 'Единая платформа для управления всеми устройствами умного дома с голосовым управлением и AI-аналитикой энергопотребления. Поддерживает более 500 устройств различных производителей.',
-            currentRating: 0,
-            passingThreshold: 65,
-            likes: 0,
-            dislikes: 0,
-            stage: 'Черновики',
-            comments: []
-        },
-        {
-            id: 10,
-            caseName: 'Нейроинтерфейс для реабилитации',
-            track: 'Биомедицинские технологии',
-            author: 'NeuroRehab Tech',
-            status: 'Черновик',
-            description: 'Инновационная система нейрореабилитации пациентов после инсульта с использованием интерфейса мозг-компьютер. Позволяет восстанавливать двигательные функции на 40% быстрее традиционных методов.',
-            currentRating: 0,
-            passingThreshold: 75,
-            likes: 0,
-            dislikes: 0,
-            stage: 'Черновики',
-            comments: []
-        },
-        {
-            id: 11,
-            caseName: 'Квантовый симулятор для фармацевтики',
-            track: 'Квантовые вычисления',
-            author: 'QuantumPharma Lab',
-            status: 'Черновик',
-            description: 'Революционная система для моделирования молекулярных взаимодействий с использованием квантовых алгоритмов. Ускоряет разработку новых лекарств в 100 раз по сравнению с классическими методами.',
-            currentRating: 0,
-            passingThreshold: 80,
-            likes: 0,
-            dislikes: 0,
-            stage: 'Черновики',
-            comments: []
-        },
+    // Получаем методы API
+    const { fetchCases, voteForCase, addCommentToCase } = useCasesApi()
 
-        // В разработке (2 кейса)
-        {
-            id: 12,
-            caseName: 'Автономная система управления энергосетями',
-            track: 'Энергетика',
-            author: 'GridAI Solutions',
-            status: 'В разработке',
-            description: 'AI-система для автономного управления городскими энергосетями с прогнозированием нагрузки, балансировкой и предотвращением аварий. Повышает надежность энергоснабжения на 99.9%.',
-            currentRating: 0,
-            passingThreshold: 85,
-            likes: 0,
-            dislikes: 0,
-            stage: 'В разработке',
-            comments: []
-        },
-        {
-            id: 13,
-            caseName: 'Платформа для обучения AI-моделей',
-            track: 'Машинное обучение',
-            author: 'AITrain Platform',
-            status: 'В разработке',
-            description: 'Облачная платформа для распределенного обучения нейросетей с автоматической оптимизацией гиперпараметров и мониторингом обучения в реальном времени.',
-            currentRating: 0,
-            passingThreshold: 70,
-            likes: 0,
-            dislikes: 0,
-            stage: 'В разработке',
-            comments: []
-        },
+    // Загружаем кейсы при монтировании
+    useEffect(() => {
+        loadCases()
+    }, [])
 
-        // Отобранные (3 кейса)
-        {
-            id: 14,
-            caseName: 'Система анализа медицинских изображений',
-            track: 'Медицинская диагностика',
-            author: 'MedVision AI',
-            status: 'Отобран',
-            description: 'AI-система для автоматического анализа медицинских изображений (рентген, МРТ, КТ) с точностью 98.5% в обнаружении аномалий. Ускоряет работу радиологов в 10 раз.',
-            currentRating: 94,
-            passingThreshold: 85,
-            likes: 89,
-            dislikes: 2,
-            stage: 'Отобранные',
-            comments: [
-                {
-                    id: 1,
-                    author: 'Доктор Сергеев',
-                    text: 'Используем в нашей клинике уже 3 месяца - точность действительно впечатляет!',
-                    timestamp: '1 неделя назад'
-                },
-                {
-                    id: 2,
-                    author: 'Екатерина Медведева',
-                    text: 'Отличный инструмент для скрининга. Особенно полезно для ранней диагностики.',
-                    timestamp: '2 недели назад'
-                }
-            ]
-        },
-        {
-            id: 15,
-            caseName: 'Блокчейн для цепочки поставок',
-            track: 'Блокчейн',
-            author: 'SupplyChain Trust',
-            status: 'Отобран',
-            description: 'Децентрализованная система отслеживания цепочки поставок с использованием блокчейна. Гарантирует прозрачность, подлинность и неизменяемость данных о продукции.',
-            currentRating: 87,
-            passingThreshold: 75,
-            likes: 72,
-            dislikes: 5,
-            stage: 'Отобранные',
-            comments: [
-                {
-                    id: 1,
-                    author: 'Андрей Соколов',
-                    text: 'Внедрили для отслеживания поставок кофе - клиенты ценят прозрачность!',
-                    timestamp: '5 дней назад'
-                }
-            ]
-        },
-        {
-            id: 16,
-            caseName: 'Виртуальный ассистент для пожилых',
-            track: 'Социальные технологии',
-            author: 'ElderCare Assistant',
-            status: 'Отобран',
-            description: 'AI-ассистент для пожилых людей с функциями напоминания о лекарствах, экстренного вызова помощи и социального взаимодействия. Упрощает повседневную жизнь и повышает безопасность.',
-            currentRating: 96,
-            passingThreshold: 80,
-            likes: 94,
-            dislikes: 1,
-            stage: 'Отобранные',
-            comments: [
-                {
-                    id: 1,
-                    author: 'Татьяна Николаева',
-                    text: 'Моей маме очень помогает! Особенно функция напоминания о таблетках.',
-                    timestamp: '3 дня назад'
-                },
-                {
-                    id: 2,
-                    author: 'Виктор Орлов',
-                    text: 'Социальная значимость проекта огромна. Поддерживаю на 100%!',
-                    timestamp: '1 неделя назад'
-                }
-            ]
+    const loadCases = async () => {
+        try {
+            await fetchCases()
+        } catch (err) {
+            console.error('Ошибка загрузки кейсов:', err)
         }
-    ])
+    }
 
-    // Фильтрация кейсов по выбранной категории
-    const filteredCases = cases.filter(caseItem => caseItem.stage === selectedStage)
+    // Фильтруем кейсы по выбранной стадии
+    const filteredCases = getCasesByStage(selectedStage)
 
     const handleStageSelect = (index: number, stage: string) => {
         setSelectedStage(stage)
     }
 
-    const handleVote = (caseId: number, vote: 'like' | 'dislike') => {
-        setCases(prevCases => prevCases.map(c => {
-            if (c.id === caseId) {
-                const currentVote = c.userVote
-
-                // Если нажимаем на уже активную кнопку - снимаем голос
-                if (currentVote === vote) {
-                    return {
-                        ...c,
-                        userVote: null,
-                        likes: vote === 'like' ? c.likes - 1 : c.likes,
-                        dislikes: vote === 'dislike' ? c.dislikes - 1 : c.dislikes
-                    }
-                }
-
-                // Если был другой голос - меняем его
-                if (currentVote && currentVote !== vote) {
-                    return {
-                        ...c,
-                        userVote: vote,
-                        likes: vote === 'like' ? c.likes + 1 : c.likes - 1,
-                        dislikes: vote === 'dislike' ? c.dislikes + 1 : c.dislikes - 1
-                    }
-                }
-
-                // Если голос не был поставлен - ставим новый
-                return {
-                    ...c,
-                    userVote: vote,
-                    likes: vote === 'like' ? c.likes + 1 : c.likes,
-                    dislikes: vote === 'dislike' ? c.dislikes + 1 : c.dislikes
-                }
-            }
-            return c
-        }))
+    const handleVote = async (caseId: number, vote: 'like' | 'dislike') => {
+        try {
+            await voteForCase(caseId, vote)
+        } catch (err) {
+            console.error('Ошибка голосования:', err)
+            alert('Не удалось проголосовать. Попробуйте позже.')
+        }
     }
 
-    const handleAddComment = (caseId: number, commentText: string) => {
-        console.log(`Кейс ${caseId}: новый комментарий - ${commentText}`)
-        // Здесь будет логика отправки комментария на сервер
-        // Пока просто обновим локально
-        setCases(prevCases => prevCases.map(c => {
-            if (c.id === caseId) {
-                const newComment: Comment = {
-                    id: c.comments.length + 1,
-                    author: 'Вы', // В реальном приложении тут будет имя текущего пользователя
-                    text: commentText,
-                    timestamp: 'Только что'
-                }
-                return {
-                    ...c,
-                    comments: [...c.comments, newComment]
-                }
-            }
-            return c
-        }))
+    const handleAddComment = async (caseId: number, commentText: string) => {
+        if (!commentText.trim()) return
+
+        try {
+            await addCommentToCase(caseId, commentText)
+        } catch (err) {
+            console.error('Ошибка добавления комментария:', err)
+            alert('Не удалось добавить комментарий. Попробуйте позже.')
+        }
+    }
+
+    const handleRefresh = () => {
+        loadCases()
+    }
+
+    // Показываем загрузку
+    if (loading && cases.length === 0) {
+        return (
+            <div className={styles.center}>
+                <div className={styles.wrapper}>
+                    <Header />
+                    <div className={styles.loadingContainer}>
+                        <p>Загрузка кейсов...</p>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    // Показываем ошибку
+    if (error && cases.length === 0) {
+        return (
+            <div className={styles.center}>
+                <div className={styles.wrapper}>
+                    <Header />
+                    <div className={styles.errorContainer}>
+                        <p>Ошибка: {error}</p>
+                        <button onClick={handleRefresh}>Повторить попытку</button>
+                    </div>
+                </div>
+            </div>
+        )
     }
 
     return (
+        <ProtectedRoute>
+
         <div className={styles.center}>
             <div className={styles.wrapper}>
-                <Header/>
-                <MentorCard/>
+                <Header />
+                <MentorCard />
 
                 <p className={styles.title}>Голосование за кейсы</p>
                 <p className={styles.text}>
@@ -450,25 +112,24 @@ export default function Voting() {
                     Комментарии видны другим менторам.
                 </p>
 
-                {/* Компонент кнопок выбора категории */}
                 <VotingButtons
                     initialActive={0}
                     onButtonClick={handleStageSelect}
                 />
 
-                {/* Заголовок с количеством кейсов */}
                 <div className={styles.casesHeader}>
                     <h2 className={styles.titleFrom}>
                         {selectedStage} ({filteredCases.length})
                     </h2>
+                    {loading && <span style={{ color: '#0070f3', fontSize: 14 }}>Обновление...</span>}
                 </div>
 
-                {/* Список карточек кейсов */}
                 <div className={styles.casesList}>
-                    {filteredCases.length > 0 ? (
+                    {filteredCases.length > 0 && (
                         filteredCases.map((caseItem) => (
                             <VotingCard
                                 key={caseItem.id}
+                                id={caseItem.id}
                                 caseName={caseItem.caseName}
                                 track={caseItem.track}
                                 author={caseItem.author}
@@ -479,17 +140,23 @@ export default function Voting() {
                                 likes={caseItem.likes}
                                 dislikes={caseItem.dislikes}
                                 comments={caseItem.comments}
-                                onVote={(vote) => handleVote(caseItem.id, vote)}
-                                onAddComment={(comment) => handleAddComment(caseItem.id, comment)}
+                                userVote={caseItem.userVote}
+                                onVote={handleVote}
+                                onAddComment={handleAddComment}
                             />
                         ))
-                    ) : (
-                        <div className={styles.noCases}>
-                            <p>Нет кейсов в категории "{selectedStage}"</p>
-                        </div>
                     )}
+                </div>
+
+                <div style={{ textAlign: 'center', padding: 15, color: '#666', fontSize: 14 }}>
+                    <p>
+                        Всего кейсов: {cases.length} |
+                        Загружено: {filteredCases.length}
+                    </p>
                 </div>
             </div>
         </div>
+        </ProtectedRoute>
+
     )
 }

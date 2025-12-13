@@ -1,72 +1,73 @@
+// src/components/ParticipantCard/ParticipantCard.tsx
 'use client'
 
 import { Typography } from 'antd'
-import { useState, forwardRef, useImperativeHandle, useEffect } from 'react'
+import { forwardRef, useImperativeHandle } from 'react'
 import styles from "./styles.module.css"
+import { useMeetingStore } from '@/store/useMeetingStore'
 
 const { Text } = Typography
 
 interface ParticipantCardProps {
+    personId: number;
     name: string;
     role: string;
-    initialIsPresent: boolean;
-    initialIsLate?: boolean;
-    forcePresent?: boolean | null;
-    forceLate?: boolean | null;
     onTogglePresence?: (isPresent: boolean) => void;
     onToggleLate?: (isLate: boolean) => void;
 }
 
 const ParticipantCard = forwardRef(function ParticipantCard({
+                                                                personId,
                                                                 name,
                                                                 role,
-                                                                initialIsPresent,
-                                                                initialIsLate = false,
-                                                                forcePresent = null,
-                                                                forceLate = null,
                                                                 onTogglePresence,
                                                                 onToggleLate
                                                             }: ParticipantCardProps, ref) {
-    const [isPresent, setIsPresent] = useState(initialIsPresent)
-    const [isLate, setIsLate] = useState(initialIsLate)
+    // Получаем данные и методы из store
+    const participant = useMeetingStore(state =>
+        state.meeting.people.find(p => p.id === personId && p.type === 'participant')
+    )
+    const togglePresence = useMeetingStore(state => state.togglePresence)
+    const toggleLate = useMeetingStore(state => state.toggleLate)
 
-    // Обновляем состояние при изменении forcePresent
-    useEffect(() => {
-        if (forcePresent !== null) {
-            setIsPresent(forcePresent)
-            // Если устанавливаем отсутствие, сбрасываем опоздание
-            if (!forcePresent) {
-                setIsLate(false)
+    if (!participant) return null
+
+    const isPresent = participant.isPresent
+    const isLate = participant.isLate ?? false
+
+    const handleTogglePresence = () => {
+        // Обновляем в store
+        togglePresence(personId)
+
+        // Вызываем callback если есть
+        if (onTogglePresence) {
+            onTogglePresence(!isPresent)
+        }
+    }
+
+    const handleToggleLate = () => {
+        // Только если участник присутствует
+        if (isPresent) {
+            // Обновляем в store
+            toggleLate(personId)
+
+            // Вызываем callback если есть
+            if (onToggleLate) {
+                onToggleLate(!isLate)
             }
         }
-    }, [forcePresent])
-
-    // Обновляем состояние при изменении forceLate
-    useEffect(() => {
-        if (forceLate !== null && isPresent) {
-            setIsLate(forceLate)
-        }
-    }, [forceLate, isPresent])
-
-    const setPresence = (value: boolean) => {
-        setIsPresent(value)
-        if (!value) {
-            setIsLate(false) // Сбрасываем опоздание при отсутствии
-        }
-        onTogglePresence?.(value)
     }
 
-    const setLate = (value: boolean) => {
-        if (isPresent) {
-            setIsLate(value)
-            onToggleLate?.(value)
-        }
-    }
-
-    // Экспортируем методы для родительского компонента
+    // Экспортируем методы для родительского компонента (для совместимости)
     useImperativeHandle(ref, () => ({
-        setPresence,
-        setLate
+        setPresence: (value: boolean) => {
+            // Эта логика теперь в store, но оставляем для совместимости
+            console.log(`Принудительная установка присутствия для участника ${personId}: ${value}`)
+        },
+        setLate: (value: boolean) => {
+            // Эта логика теперь в store, но оставляем для совместимости
+            console.log(`Принудительная установка опоздания для участника ${personId}: ${value}`)
+        }
     }))
 
     return (
@@ -84,7 +85,7 @@ const ParticipantCard = forwardRef(function ParticipantCard({
                 <div className={styles.presenceStatus}>
                     <button
                         className={`${styles.presenceIndicator} ${isPresent ? styles.present : styles.absent}`}
-                        onClick={() => setPresence(!isPresent)}
+                        onClick={handleTogglePresence}
                         aria-label={isPresent ? 'Отметить как отсутствующего' : 'Отметить как присутствующего'}
                     >
                         {isPresent && (
@@ -103,7 +104,7 @@ const ParticipantCard = forwardRef(function ParticipantCard({
                 <div className={styles.lateStatus}>
                     <button
                         className={`${styles.lateIndicator} ${isLate ? styles.lateActive : styles.lateInactive}`}
-                        onClick={() => setLate(!isLate)}
+                        onClick={handleToggleLate}
                         disabled={!isPresent}
                         aria-label={isLate ? 'Снять отметку об опоздании' : 'Отметить как опоздавшего'}
                     >
@@ -122,5 +123,6 @@ const ParticipantCard = forwardRef(function ParticipantCard({
         </div>
     )
 })
+
 
 export default ParticipantCard
