@@ -1,75 +1,114 @@
-'use client';
+// src/app/test-connection/page.tsx
+'use client'
 
-import { useEffect, useState } from 'react';
-import { api } from '@/lib/api.ts';
+import { useState } from 'react'
+import { useAuthStore } from '@/store/useAuthStore'
 
-export default function TestConnectionPage() {
-    const [status, setStatus] = useState('Нажимайте кнопку для теста');
-    const [data, setData] = useState<any>(null);
+export default function TestConnection() {
+    const [email, setEmail] = useState('')
+    const [password, setPassword] = useState('')
+    const [result, setResult] = useState('')
+    const { login, checkAuth, user, isAuthenticated, loading } = useAuthStore()
 
-    const testConnection = async () => {
+    const testLogin = async () => {
         try {
-            setStatus('Проверяем подключение...');
-
-            // Пробуем получить пользователей
-            const users = await api.get('/api/v1/users/?page_size=5');
-            setData(users);
-            setStatus(`✅ Успешно! Найдено пользователей: ${users.total || 0}`);
-
-        } catch (error: any) {
-            setStatus(`❌ Ошибка: ${error.message}`);
-            console.error('Тест не прошел:', error);
+            setResult('Пытаюсь войти...')
+            await login(email, password)
+            setResult(`Успешно! Пользователь: ${user?.email}`)
+        } catch (error) {
+            setResult(`Ошибка: ${error}`)
         }
-    };
+    }
+
+    const testCheckAuth = async () => {
+        try {
+            setResult('Проверяю авторизацию...')
+            const isAuth = await checkAuth()
+            setResult(`Авторизация: ${isAuth}, User: ${JSON.stringify(user)}`)
+        } catch (error) {
+            setResult(`Ошибка: ${error}`)
+        }
+    }
+
+    const testApiDirect = async () => {
+        try {
+            setResult('Тестирую прямой запрос к API...')
+
+            // Пробуем разные эндпоинты
+            const endpoints = [
+                '/api/v1/users/me',
+                '/api/v1/users/',
+                '/api/v1/cases/',
+            ]
+
+            for (const endpoint of endpoints) {
+                const response = await fetch(`http://localhost:8000${endpoint}`, {
+                    headers: {
+                        'Authorization': 'Basic ' + btoa(`${email}:${password}`),
+                    },
+                })
+
+                if (response.ok) {
+                    const data = await response.json()
+                    setResult(`✅ ${endpoint}: доступен\n${JSON.stringify(data, null, 2)}`)
+                    break
+                } else {
+                    setResult(`❌ ${endpoint}: ${response.status} ${response.statusText}`)
+                }
+            }
+        } catch (error) {
+            setResult(`Ошибка запроса: ${error}`)
+        }
+    }
 
     return (
-        <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
+        <div style={{ padding: '20px', fontFamily: 'monospace' }}>
             <h1>Тест подключения к API</h1>
 
-            <div style={{ margin: '20px 0', padding: '15px', backgroundColor: '#f0f8ff', borderRadius: '5px' }}>
-                <p><strong>Статус:</strong> {status}</p>
-                <p><strong>API URL:</strong> {process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}</p>
-
-                <button
-                    onClick={testConnection}
-                    style={{
-                        padding: '10px 20px',
-                        backgroundColor: '#4CAF50',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '5px',
-                        cursor: 'pointer',
-                        marginTop: '10px'
-                    }}
-                >
-                    Проверить подключение
+            <div style={{ marginBottom: '20px' }}>
+                <input
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    style={{ marginRight: '10px', padding: '5px' }}
+                />
+                <input
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    style={{ marginRight: '10px', padding: '5px' }}
+                />
+                <button onClick={testLogin} disabled={loading}>
+                    {loading ? 'Загрузка...' : 'Войти'}
                 </button>
             </div>
 
-            {data && (
-                <div>
-                    <h3>Данные с сервера:</h3>
-                    <pre style={{
-                        backgroundColor: '#f5f5f5',
-                        padding: '15px',
-                        borderRadius: '5px',
-                        overflow: 'auto',
-                        maxHeight: '400px'
-                    }}>
-            {JSON.stringify(data, null, 2)}
-          </pre>
-                </div>
-            )}
-
-            <div style={{ marginTop: '30px' }}>
-                <h3>Проверьте вручную:</h3>
-                <ul>
-                    <li><a href="http://localhost:8000/api/v1/users/" target="_blank">Пользователи</a></li>
-                    <li><a href="http://localhost:8000/api/v1/cases/" target="_blank">Кейсы</a></li>
-                    <li><a href="http://localhost:8000/api/v1/meetings/" target="_blank">Встречи</a></li>
-                    <li><a href="http://localhost:8000/docs" target="_blank">Swagger</a></li>
-                </ul>
+            <div style={{ marginBottom: '20px' }}>
+                <button onClick={testCheckAuth} style={{ marginRight: '10px' }}>
+                    Проверить авторизацию
+                </button>
+                <button onClick={testApiDirect}>
+                    Тест прямого API запроса
+                </button>
             </div>
+
+            <div>
+                <p>Статус: {isAuthenticated ? '✅ Авторизован' : '❌ Не авторизован'}</p>
+                <p>Пользователь: {user ? `${user.firstName} ${user.lastName} (${user.email})` : 'Нет'}</p>
+            </div>
+
+            <pre style={{
+                background: '#f5f5f5',
+                padding: '10px',
+                borderRadius: '5px',
+                marginTop: '20px',
+                maxHeight: '400px',
+                overflow: 'auto'
+            }}>
+                {result}
+            </pre>
         </div>
-    );
+    )
 }

@@ -1,10 +1,30 @@
 import { Card, Typography, Button, Avatar, Tag } from 'antd';
 import { CalendarOutlined, UserOutlined, VideoCameraOutlined, LinkOutlined } from '@ant-design/icons';
 import styles from "./styles.module.css";
+import { formatMeetingDate, formatMeetingTime } from '@/utils/dateFormatters';
 
 const { Title, Text } = Typography;
 
-export default function MeetingCard() {
+interface MeetingCardProps {
+    meetingId?: number;
+    date?: string;
+    time?: string;
+    title?: string;
+    meetingLink?: string;
+}
+
+export default function MeetingCard({ 
+    meetingId, 
+    date, 
+    time, 
+    title,
+    meetingLink 
+}: MeetingCardProps) {
+    const displayDate = date || "Сегодня";
+    const displayTime = time || "18:00-18:45 (МСК)";
+    const displayTitle = title || "Созвон по проекту ReqRoute";
+    const displayId = meetingId ? `RR-${meetingId}` : "RR-317";
+
     return (
         <Card  style={{
                 maxWidth: 600,
@@ -17,10 +37,10 @@ export default function MeetingCard() {
         >
             <div className={styles.wrap} style={{marginBottom: 10}}>
                 <Text style={{fontSize: "16px", fontWeight: 700}}>Ближайший созвон</Text>
-                <p className={styles.text}> ID встречи: RR-317</p>
+                <p className={styles.text}> ID встречи: {displayId}</p>
             </div>
             <p>
-                <span className={styles.text}>Сегодня,</span> <strong>18:00-18:45 (МСК)</strong> <span className={styles.text}>• Тема</span> <strong>Созвон по проекту ReqRoute</strong>
+                <span className={styles.text}>{displayDate},</span> <strong>{displayTime}</strong> <span className={styles.text}>• Тема</span> <strong>{displayTitle}</strong>
             </p>
             <div className={styles.wrap}>
                 <div style={{display: "flex", gap: 5, alignItems: "center", marginBottom: 10}}>

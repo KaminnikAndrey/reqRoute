@@ -1,102 +1,89 @@
-// src/hooks/useAuthApi.ts
-import { useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { useAuthStore } from '@/store/useAuthStore'
-import { RegistrationData } from '@/types/auth'
-import { authApiClient } from '@/lib/authApi'
+import { User } from '@/types/auth'
+import {authApiClient} from "@/lib/authApi";
 
 export function useAuthApi() {
-    const { setLoading, setError, setUser } = useAuthStore()
-
-    const register = useCallback(async (data: RegistrationData) => {
-        setLoading(true)
-        setError(null)
-
-        try {
-            // Валидация пароля
-            if (data.password.length < 8) {
-                throw new Error('Пароль должен содержать не менее 8 символов')
-            }
-
-            if (data.password !== data.confirmPassword) {
-                throw new Error('Пароли не совпадают')
-            }
-
-            if (!data.agreement) {
-                throw new Error('Необходимо согласиться с правилами')
-            }
-
-            // В мок-режиме используем локальную логику
-            if (process.env.NEXT_PUBLIC_API_MODE === 'mock') {
-                // Имитация запроса
-                await new Promise(resolve => setTimeout(resolve, 500))
-
-                // Создаем пользователя
-                const user = await authApiClient.register(data)
-                setUser(user)
-                return user
-            }
-
-            // В реальном режиме - запрос к API
-            const user = await authApiClient.register(data)
-            setUser(user)
-            return user
-
-        } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Ошибка регистрации'
-            setError(errorMessage)
-            throw err
-        } finally {
-            setLoading(false)
-        }
-    }, [setLoading, setError, setUser])
+    const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+    const { setUser, setLoading, setError: setStoreError, logout: storeLogout } = useAuthStore()
 
     const login = useCallback(async (email: string, password: string) => {
-        setLoading(true)
+        setIsLoading(true)
         setError(null)
+        setStoreError(null)
+        setLoading(true)
 
         try {
-            // В мок-режиме
-            if (process.env.NEXT_PUBLIC_API_MODE === 'mock') {
-                await new Promise(resolve => setTimeout(resolve, 500))
+            // 1. Логинимся через API
+            const response = await authApiClient.login(email, password)
+            console.log('Login response:', response)
 
-                const user = await authApiClient.login(email, password)
-                setUser(user)
-                return user
+            // 2. Получаем данные пользователя
+            const userData = await authApiClient.getCurrentUser()
+
+            // 3. Преобразуем данные в наш формат
+            const user: User = {
+                id: userData.id,
+                firstName: userData.full_name.split(' ')[0] || '',
+                lastName: userData.full_name.split(' ').slice(1).join(' ') || '',
+                email: userData.email,
+                company: userData.company || '',
+                position: userData.position || '',
+                createdAt: new Date().toISOString()
             }
 
-            // В реальном режиме
-            const user = await authApiClient.login(email, password)
+            // 4. Сохраняем в store
             setUser(user)
-            return user
-
-        } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Ошибка входа'
-            setError(errorMessage)
-            throw err
-        } finally {
             setLoading(false)
+            setIsLoading(false)
+
+            return user
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Ошибка авторизации'
+            setError(message)
+            setStoreError(message)
+            setLoading(false)
+            setIsLoading(false)
+            throw err
         }
-    }, [setLoading, setError, setUser])
+    }, [setUser, setLoading, setStoreError])
 
     const logout = useCallback(async () => {
         try {
-            // В мок-режиме
-            if (process.env.NEXT_PUBLIC_API_MODE === 'mock') {
-                await authApiClient.logout()
-                return
-            }
-
-            // В реальном режиме
             await authApiClient.logout()
-
-        } catch (err) {
-            console.error('Ошибка выхода:', err)
+        } finally {
+            storeLogout()
         }
-    }, [])
+    }, [storeLogout])
+
+    const checkAuth = useCallback(async () => {
+        try {
+            const isAuthenticated = await authApiClient.checkAuth()
+            if (isAuthenticated) {
+                const userData = await authApiClient.getCurrentUser()
+                const user: User = {
+                    id: userData.id,
+                    firstName: userData.full_name.split(' ')[0] || '',
+                    lastName: userData.full_name.split(' ').slice(1).join(' ') || '',
+                    email: userData.email,
+                    company: userData.company || '',
+                    position: userData.position || '',
+                    createdAt: new Date().toISOString()
+                }
+                setUser(user)
+            }
+            return isAuthenticated
+        } catch {
+            return false
+        }
+    }, [setUser])
 
     return {
-        register,
         login,
-        logout
+        logout,
+        checkAuth,
+        isLoading,
+        error,
     }
 }

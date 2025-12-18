@@ -1,11 +1,11 @@
-// src/hooks/useCasesApi.ts
+// hooks/useCasesApi.ts (обновить)
 import { useCallback } from 'react'
-import { casesApiClient } from '@/lib/api'
+import { casesApiClient } from '@/lib/casesApi'
 import { useCasesStore } from '@/store/useCasesStore'
 import { mapApiCaseToUI } from '@/utils/transformers'
 
 export function useCasesApi() {
-    const { setCases, setLoading, setError } = useCasesStore()
+    const { setCases, setLoading, setError, updateVote, addComment } = useCasesStore()
 
     const fetchCases = useCallback(async () => {
         setLoading(true)
@@ -27,44 +27,40 @@ export function useCasesApi() {
 
     const voteForCase = useCallback(async (caseId: number, voteType: 'like' | 'dislike') => {
         try {
-            // Оптимистичное обновление UI
-            useCasesStore.getState().updateVote(caseId, voteType)
-
-            // "Отправка" на сервер
-            await casesApiClient.voteForCase(caseId, voteType)
-
+            const response = await casesApiClient.voteForCase(caseId, voteType)
+            // Обновляем голос в store
+            updateVote(caseId, voteType)
+            return response
         } catch (err) {
-            console.error('Ошибка голосования:', err)
-            // При ошибке - перезагружаем данные
-            await fetchCases()
+            const errorMessage = err instanceof Error ? err.message : 'Неизвестная ошибка'
+            setError(errorMessage)
             throw err
         }
-    }, [fetchCases])
+    }, [updateVote, setError])
 
     const addCommentToCase = useCallback(async (caseId: number, comment: string) => {
         try {
-            // Оптимистичное обновление UI
-            useCasesStore.getState().addComment(caseId, comment)
-
-            // "Отправка" на сервер
             const response = await casesApiClient.addCommentToCase(caseId, comment)
+            // Добавляем комментарий в store
+            addComment(caseId, comment)
             return response
         } catch (err) {
-            console.error('Ошибка добавления комментария:', err)
-            await fetchCases()
+            const errorMessage = err instanceof Error ? err.message : 'Неизвестная ошибка'
+            setError(errorMessage)
             throw err
         }
-    }, [fetchCases])
+    }, [addComment, setError])
 
     const fetchComments = useCallback(async (caseId: number) => {
         try {
             const comments = await casesApiClient.getCaseComments(caseId)
             return comments
         } catch (err) {
-            console.error('Ошибка загрузки комментариев:', err)
+            const errorMessage = err instanceof Error ? err.message : 'Неизвестная ошибка'
+            setError(errorMessage)
             throw err
         }
-    }, [])
+    }, [setError])
 
     return {
         fetchCases,

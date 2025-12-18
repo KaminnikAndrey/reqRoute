@@ -1,7 +1,19 @@
 // src/utils/transformers.ts
 import { CaseFromApi, CaseForUI, CommentFromApi } from '@/types'
 
-export function mapApiCaseToUI(apiCase: CaseFromApi): CaseForUI {
+// Тип для данных кейса, который может прийти из API или мок данных
+type CaseData = {
+    id: number
+    term_id: number
+    user_id: number
+    title: string
+    description: string | null
+    status: string
+    likes_count?: number
+    dislikes_count?: number
+}
+
+export function mapApiCaseToUI(apiCase: CaseData): CaseForUI {
     return {
         id: apiCase.id,
         caseName: apiCase.title,
@@ -68,7 +80,7 @@ function getStatusText(status: string): string {
     return statusMap[status] || status
 }
 
-function calculateRating(apiCase: CaseFromApi): number {
+function calculateRating(apiCase: { likes_count?: number; dislikes_count?: number }): number {
     const likes = apiCase.likes_count || 0
     const dislikes = apiCase.dislikes_count || 0
     const totalVotes = likes + dislikes

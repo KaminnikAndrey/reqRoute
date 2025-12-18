@@ -13,7 +13,7 @@ export default function SpeakersForm() {
                 boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
                 border: "1px solid #E9ECEF"
             }}
-            bodyStyle={{ padding: 15 }}
+            styles={{ body: { padding: 15 } }}
         >
             <p className={styles.titleFrom}>Спикеры и ответственные</p>
 

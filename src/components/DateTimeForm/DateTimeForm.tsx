@@ -1,4 +1,4 @@
-import { Card, Form, Input, Typography, Button, Select } from 'antd';
+import { Card, Form, Input, Typography, Button, Select, FormInstance } from 'antd';
 import { PlusOutlined, MinusOutlined } from '@ant-design/icons';
 import styles from "./styles.module.css";
 import { useState } from 'react';
@@ -6,13 +6,17 @@ import { useState } from 'react';
 const { Title, Text } = Typography;
 const { Option } = Select;
 
+interface DateTimeFormProps {
+    form?: FormInstance;
+}
+
 interface TimeSlot {
     id: number;
     time: string;
     name: string;
 }
 
-export default function DateTimeForm() {
+export default function DateTimeForm({ form }: DateTimeFormProps) {
     const [activeButton, setActiveButton] = useState<string>('online');
     const [slots, setSlots] = useState<TimeSlot[]>([
         { id: 1, time: '', name: '' },
@@ -55,7 +59,7 @@ export default function DateTimeForm() {
                 border: "1px solid #E9ECEF"
 
             }}
-            bodyStyle={{ padding: 15 }}
+            styles={{ body: { padding: 15 } }}
         >
             <p className={styles.titleFrom}>Дата, время и программа</p>
 
@@ -83,7 +87,7 @@ export default function DateTimeForm() {
                 </button>
             </div>
 
-            <Form layout="vertical">
+            <Form form={form} layout="vertical">
                 {/* Первая строка: Дата и Старт */}
                 <div style={{ display: 'flex', gap: 16, marginBottom: 5 }}>
                     <Form.Item

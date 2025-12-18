@@ -3,20 +3,31 @@
 
 import { Card, Typography, Input } from 'antd'
 import { useState, useEffect } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import styles from "./styles.module.css"
 import Header from "@/components/header/Header";
 import OrganizerCard from "@/components/OrganizerCard/OrganizerCard";
 import ParticipantCard from "@/components/ParticipantCard/ParticipantCard";
 import { useMeetingStore } from '@/store/useMeetingStore'
-import { useMeetingApi } from '@/hooks/useMeetingApi'
+import { useMeeting } from '@/hooks/useMeetingApi'
+import { meetingsClient } from '@/lib/clients'
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 const { Text } = Typography
 const { TextArea } = Input
 
 export default function MinutesOfMeeting() {
+    const router = useRouter()
+    const searchParams = useSearchParams()
+    const meetingIdParam = searchParams.get('meetingId')
+    const meetingId = meetingIdParam ? parseInt(meetingIdParam, 10) : undefined
+
+    // Загружаем данные встречи из API
+    const { meeting: apiMeeting, isLoading: meetingLoading } = useMeeting(meetingId)
+
     // Получаем данные и методы из store
     const meeting = useMeetingStore(state => state.meeting)
+    const setMeeting = useMeetingStore(state => state.setMeeting)
     const updateStatus = useMeetingStore(state => state.updateStatus)
     const updateDecisions = useMeetingStore(state => state.updateDecisions)
     const updateComments = useMeetingStore(state => state.updateComments)
@@ -29,17 +40,32 @@ export default function MinutesOfMeeting() {
     const getOrganizers = useMeetingStore(state => state.getOrganizers)
     const getParticipants = useMeetingStore(state => state.getParticipants)
 
-    // Получаем методы API
-    const { fetchMeeting, saveMeeting } = useMeetingApi()
-
     // Локальные состояния для текстовых полей
     const [decisions, setDecisions] = useState(meeting.decisions)
     const [comments, setComments] = useState(meeting.comments)
+    const [isSaving, setIsSaving] = useState(false)
 
-    // Загружаем данные при монтировании
+    // Обновляем store при загрузке данных из API
     useEffect(() => {
-        fetchMeeting()
-    }, [fetchMeeting])
+        if (apiMeeting && apiMeeting.summary) {
+            // Парсим summary обратно в decisions и comments
+            const summary = apiMeeting.summary
+            
+            // Пытаемся извлечь решения и комментарии из summary
+            const decisionsMatch = summary.match(/Решения и следующие шаги:\s*\n([\s\S]*?)(?=\n\nКомментарии:|$)/)
+            const commentsMatch = summary.match(/Комментарии:\s*\n([\s\S]*?)(?=\n\nСтатус:|$)/)
+            
+            if (decisionsMatch && decisionsMatch[1]) {
+                setDecisions(decisionsMatch[1].trim())
+                updateDecisions(decisionsMatch[1].trim())
+            }
+            
+            if (commentsMatch && commentsMatch[1]) {
+                setComments(commentsMatch[1].trim())
+                updateComments(commentsMatch[1].trim())
+            }
+        }
+    }, [apiMeeting, updateDecisions, updateComments])
 
     // Синхронизируем локальные состояния с store
     useEffect(() => {
@@ -55,16 +81,50 @@ export default function MinutesOfMeeting() {
     }
 
     const handleSave = async () => {
+        if (!meetingId) {
+            console.error('❌ ID встречи не указан')
+            return
+        }
+
+        setIsSaving(true)
+
         try {
-            // Сначала обновляем текстовые поля в store
+            // Обновляем текстовые поля в store
             updateDecisions(decisions)
             updateComments(comments)
 
-            // Затем сохраняем
-            await saveMeeting()
-            console.log('✅ Протокол сохранен')
+            // Формируем данные для сохранения
+            // Объединяем decisions и comments в summary
+            const summaryParts: string[] = []
+            
+            if (decisions.trim()) {
+                summaryParts.push(`Решения и следующие шаги:\n${decisions}`)
+            }
+            
+            if (comments.trim()) {
+                summaryParts.push(`Комментарии:\n${comments}`)
+            }
+            
+            // Добавляем информацию о статусе
+            if (meeting.status) {
+                summaryParts.push(`Статус: ${meeting.status}`)
+            }
+
+            const summary = summaryParts.join('\n\n') || null
+
+            // Отправляем данные на бэкенд
+            await meetingsClient.update(meetingId, {
+                summary: summary || null,
+            })
+
+            console.log('✅ Протокол сохранен на бэкенд')
+            
+            // Перенаправляем на главную страницу
+            router.push('/main')
         } catch (err) {
             console.error('❌ Ошибка сохранения:', err)
+        } finally {
+            setIsSaving(false)
         }
     }
 
@@ -93,7 +153,6 @@ export default function MinutesOfMeeting() {
     const participants = getParticipants()
 
     return (
-        <ProtectedRoute>
 
         <div className={styles.center}>
             <div className={styles.wrapper}>
@@ -306,8 +365,9 @@ export default function MinutesOfMeeting() {
                             <button
                                 className={`${styles.actionButton} ${styles.saveButton}`}
                                 onClick={handleSave}
+                                disabled={isSaving || !meetingId}
                             >
-                                Сохранить протокол
+                                {isSaving ? 'Сохранение...' : 'Сохранить протокол'}
                             </button>
                             <button
                                 className={`${styles.actionButton} ${styles.cancelButton}`}
@@ -321,7 +381,7 @@ export default function MinutesOfMeeting() {
                 </Card>
             </div>
         </div>
-            </ProtectedRoute>
+
 
             )
 }

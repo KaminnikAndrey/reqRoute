@@ -1,8 +1,7 @@
-// src/app/layout.tsx (главный layout)
-'use client'
-
+// src/app/layout.tsx
 import { Inter } from 'next/font/google'
 import './globals.css'
+import {AuthProviderNoRedirect} from "@/components/auth/AuthProviderNoRedirect";
 
 const inter = Inter({ subsets: ['latin', 'cyrillic'] })
 
@@ -14,9 +13,9 @@ export default function RootLayout({
     return (
         <html lang="ru">
         <body className={inter.className}>
-        <AuthProvider>
+        <AuthProviderNoRedirect>
             {children}
-        </AuthProvider>
+        </AuthProviderNoRedirect>
         </body>
         </html>
     )

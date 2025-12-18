@@ -23,7 +23,7 @@ export default function ChecksForm() {
                 border: "1px solid #E9ECEF",
                 marginBottom: "20px"
             }}
-            bodyStyle={{ padding: 15 }}
+            styles={{ body: { padding: 15 } }}
         >
             <p className={styles.titleFrom}>Проверки перед публикацией</p>
 

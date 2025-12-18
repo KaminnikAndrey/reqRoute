@@ -1,10 +1,14 @@
-import { Card, Form, Input, Typography } from 'antd';
+import { Card, Form, Input, Typography, FormInstance } from 'antd';
 import styles from "./styles.module.css"
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
-export default function EventPassportForm() {
+interface EventPassportFormProps {
+    form?: FormInstance;
+}
+
+export default function EventPassportForm({ form }: EventPassportFormProps) {
     return (
         <Card
             style={{
@@ -16,12 +20,13 @@ export default function EventPassportForm() {
                 border: "1px solid #E9ECEF"
 
             }}
-            bodyStyle={{ padding: 15 }}
+            styles={{ body: { padding: 15 } }}
         >
             {/* Заголовок */}
             <p className={styles.titleFrom}>Паспорт мероприятия</p>
 
             <Form
+                form={form}
                 layout="vertical"
                 requiredMark="optional"
             >

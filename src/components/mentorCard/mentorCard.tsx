@@ -19,7 +19,7 @@ export default function MentorCard({
                                                    onMentorClick
                                                }: MentorCardProps)  {
     return (
-        <Card className={styles.mentorCard} bodyStyle={{padding: 0}}
+        <Card className={styles.mentorCard} styles={{ body: { padding: 0 } }}
         >
             <div className={styles.mentorCardContent}>
                 {/* Левая часть: Текстовая информация */}

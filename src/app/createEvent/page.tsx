@@ -1,23 +1,96 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
+import { Form } from 'antd'
 import styles from "./styles.module.css"
 import Link from "next/link";
-import Header from "@/app/components/header/Header";
-import {ColorBlock} from "@/app/components/ColorBlock/ColorBlock";
-import EventPassportForm from "@/app/components/eventPassportForm/EventPassportForm";
-import FormatAccessForm from "@/app/components/FormatAccessForm/FormatAccessForm";
-import DateTimeForm from "@/app/components/DateTimeForm/DateTimeForm";
-import SpeakersForm from "@/app/components/SpeakersForm/SpeakersForm";
-import IntegrationFilesForm from "@/app/components/IntegrationFilesForm/IntegrationFilesForm";
-import RegistrationForm from "@/app/components/RegistrationForm/RegistrationForm";
-import ChecksForm from "@/app/components/CheksForm/CheksForm";
+import Header from "@/components/header/Header";
+import {ColorBlock} from "@/components/ColorBlock/ColorBlock";
+import EventPassportForm from "@/components/eventPassportForm/EventPassportForm";
+import FormatAccessForm from "@/components/FormatAccessForm/FormatAccessForm";
+import DateTimeForm from "@/components/DateTimeForm/DateTimeForm";
+import SpeakersForm from "@/components/SpeakersForm/SpeakersForm";
+import IntegrationFilesForm from "@/components/IntegrationFilesForm/IntegrationFilesForm";
+import RegistrationForm from "@/components/RegistrationForm/RegistrationForm";
+import { meetingsClient } from '@/lib/clients'
+import { useUserTeams } from '@/hooks/useUserTeams'
 
 export default function createEvent() {
+    const router = useRouter()
+    const [formEventPassport] = Form.useForm()
+    const [formDateTime] = Form.useForm()
+    const [formFormatAccess] = Form.useForm()
+    const [isPublishing, setIsPublishing] = useState(false)
+    const { teams, isLoading: teamsLoading } = useUserTeams()
 
+    const handlePublish = async () => {
+        try {
+            setIsPublishing(true)
+
+            // Валидация форм
+            await Promise.all([
+                formEventPassport.validateFields(),
+                formDateTime.validateFields(),
+                formFormatAccess.validateFields()
+            ])
+
+            // Получаем данные из форм
+            const eventPassportData = formEventPassport.getFieldsValue()
+            const dateTimeData = formDateTime.getFieldsValue()
+            const formatAccessData = formFormatAccess.getFieldsValue()
+
+            // Формируем date_time из даты и времени
+            const date = dateTimeData.date
+            const startTime = dateTimeData.startTime
+            if (!date || !startTime) {
+                throw new Error('Необходимо указать дату и время начала')
+            }
+
+            const dateTime = new Date(`${date}T${startTime}`).toISOString()
+
+            // Формируем summary из данных мероприятия
+            const summaryParts: string[] = []
+            if (eventPassportData.eventName) {
+                summaryParts.push(`Название: ${eventPassportData.eventName}`)
+            }
+            if (eventPassportData.shortDescription) {
+                summaryParts.push(`Описание: ${eventPassportData.shortDescription}`)
+            }
+            if (formatAccessData.platform) {
+                summaryParts.push(`Платформа/Адрес: ${formatAccessData.platform}`)
+            }
+
+            const summary = summaryParts.join('\n') || null
+
+            // Получаем recording_link из платформы
+            const recordingLink = formatAccessData.platform || null
+
+            // Используем команду с ID 9
+            const teamId = 9
+
+            // Создаем встречу
+            const meetingData = {
+                team_id: teamId,
+                date_time: dateTime,
+                summary: summary,
+                recording_link: recordingLink,
+            }
+
+            await meetingsClient.create(meetingData)
+
+            console.log('✅ Мероприятие создано')
+            
+            // Перенаправляем на главную страницу
+            router.push('/main')
+        } catch (err) {
+            console.error('❌ Ошибка создания мероприятия:', err)
+        } finally {
+            setIsPublishing(false)
+        }
+    }
 
     return (
-        <ProtectedRoute>
             <div className={styles.center}>
                 <div className={styles.wrapper}>
                     <Header/>
@@ -30,9 +103,9 @@ export default function createEvent() {
                         <ColorBlock />
 
                     </div>
-                    <EventPassportForm/>
-                    <FormatAccessForm/>
-                    <DateTimeForm/>
+                    <EventPassportForm form={formEventPassport}/>
+                    <FormatAccessForm form={formFormatAccess}/>
+                    <DateTimeForm form={formDateTime}/>
                     <SpeakersForm/>
                     <IntegrationFilesForm/>
                     <RegistrationForm/>
@@ -54,8 +127,10 @@ export default function createEvent() {
                             className={`${styles.btnAccessActive}`}
                             type="button"
                             style={{width: "195px"}}
+                            onClick={handlePublish}
+                            disabled={isPublishing}
                         >
-                            Опубликовать
+                            {isPublishing ? 'Публикация...' : 'Опубликовать'}
                         </button>
                         <button
                             className={`${styles.btnAccess}`}
@@ -72,7 +147,6 @@ export default function createEvent() {
                     </div>
                 </div>
             </div>
-        </ProtectedRoute>
 
     )
 }

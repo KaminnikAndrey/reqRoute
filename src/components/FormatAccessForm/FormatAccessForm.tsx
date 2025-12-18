@@ -1,11 +1,15 @@
-import { Card, Form, Input, Typography, Radio, Checkbox, Space } from 'antd';
+import { Card, Form, Input, Typography, Radio, Checkbox, Space, FormInstance } from 'antd';
 import Link from "next/link";
 import styles from "./styles.module.css"
 import { useState } from 'react';
 
 const { Title, Text } = Typography;
 
-export default function FormatAccessForm() {
+interface FormatAccessFormProps {
+    form?: FormInstance;
+}
+
+export default function FormatAccessForm({ form }: FormatAccessFormProps) {
     const [activeButton, setActiveButton] = useState<string>('online');
 
     const handleButtonClick = (buttonName: string) => {
@@ -21,10 +25,10 @@ export default function FormatAccessForm() {
                 border: "1px solid #E9ECEF"
 
             }}
-            bodyStyle={{ padding: 15 }}
+            styles={{ body: { padding: 15 } }}
         >
             <p className={styles.titleFrom}>Формат и доступ</p>
-            <Form layout="vertical">
+            <Form form={form} layout="vertical">
                 {/* Кнопки формата */}
                 <div style={{ marginBottom: 16 }}>
                     <button

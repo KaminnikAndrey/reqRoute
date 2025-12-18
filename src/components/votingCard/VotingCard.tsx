@@ -28,8 +28,8 @@ interface VotingCardProps {
     dislikes: number
     comments: Comment[]
     userVote?: 'like' | 'dislike' | null
-    onVote?: (id: number, vote: 'like' | 'dislike') => void
-    onAddComment?: (id: number, comment: string) => void
+    onVote?: (vote: 'like' | 'dislike') => void
+    onAddComment?: (comment: string) => void
 }
 
 const VotingCard: React.FC<VotingCardProps> = ({
@@ -54,22 +54,15 @@ const VotingCard: React.FC<VotingCardProps> = ({
 
     const handleVote = (vote: 'like' | 'dislike') => {
         if (onVote) {
-            onVote(id, vote)
+            onVote(vote)
         }
     }
 
-    const handleAddComment = async () => {
+    const handleAddComment = () => {
         if (!newComment.trim() || !onAddComment) return
 
-        setCommentLoading(true)
-        try {
-            await onAddComment(id, newComment)
-            setNewComment('')
-        } catch (error) {
-            console.error('Ошибка при добавлении комментария:', error)
-        } finally {
-            setCommentLoading(false)
-        }
+        onAddComment(newComment)
+        setNewComment('')
     }
 
     const toggleComments = () => {

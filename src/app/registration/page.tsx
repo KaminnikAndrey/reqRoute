@@ -5,16 +5,12 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import styles from "./styles.module.css"
 import Link from "next/link"
-import { useAuthApi } from '@/hooks/useAuthApi'
-import { useAuthStore } from '@/store/useAuthStore'
-import PublicRoute from "@/components/auth/PublicRoute";
+import { authApiClient } from '@/lib/authApi'
 
 export default function Registration() {
     const router = useRouter()
-
-    // Получаем состояние и методы из store
-    const { loading, error } = useAuthStore()
-    const { register } = useAuthApi()
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
 
     // Локальное состояние для ошибок валидации
     const [formErrors, setFormErrors] = useState<Record<string, string>>({})
@@ -26,51 +22,43 @@ export default function Registration() {
         const formData = new FormData(e.target as HTMLFormElement)
 
         // Получаем данные из формы
-        const registrationData = {
-            firstName: formData.get('firstName') as string,
-            lastName: formData.get('lastName') as string,
-            company: formData.get('company') as string,
-            position: formData.get('position') as string || '',
-            email: formData.get('email') as string,
-            password: formData.get('password') as string,
-            confirmPassword: formData.get('confirmPassword') as string,
-            agreement: formData.get('agreement') === 'on'
-        }
+        const firstName = (formData.get('firstName') as string)?.trim() || ''
+        const lastName = (formData.get('lastName') as string)?.trim() || ''
+        const email = (formData.get('email') as string)?.trim() || ''
+        const password = formData.get('password') as string
+        const confirmPassword = formData.get('confirmPassword') as string
+        const agreement = formData.get('agreement') === 'on'
 
         // Валидация
         const errors: Record<string, string> = {}
 
-        if (!registrationData.firstName.trim()) {
+        if (!firstName) {
             errors.firstName = 'Имя обязательно'
         }
 
-        if (!registrationData.lastName.trim()) {
+        if (!lastName) {
             errors.lastName = 'Фамилия обязательна'
         }
 
-        if (!registrationData.company.trim()) {
-            errors.company = 'Компания обязательна'
-        }
-
-        if (!registrationData.email.trim()) {
+        if (!email) {
             errors.email = 'Email обязателен'
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(registrationData.email)) {
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
             errors.email = 'Введите корректный email'
         }
 
-        if (!registrationData.password) {
+        if (!password) {
             errors.password = 'Пароль обязателен'
-        } else if (registrationData.password.length < 8) {
+        } else if (password.length < 8) {
             errors.password = 'Пароль должен содержать не менее 8 символов'
         }
 
-        if (!registrationData.confirmPassword) {
+        if (!confirmPassword) {
             errors.confirmPassword = 'Подтверждение пароля обязательно'
-        } else if (registrationData.password !== registrationData.confirmPassword) {
+        } else if (password !== confirmPassword) {
             errors.confirmPassword = 'Пароли не совпадают'
         }
 
-        if (!registrationData.agreement) {
+        if (!agreement) {
             errors.agreement = 'Необходимо согласиться с правилами'
         }
 
@@ -79,21 +67,30 @@ export default function Registration() {
             return
         }
 
+        setLoading(true)
+        setError(null)
+
         try {
-            // Регистрация через API хук
-            await register(registrationData)
+            // Регистрация через API
+            const full_name = `${firstName} ${lastName}`.trim()
+            await authApiClient.register({
+                full_name,
+                email,
+                password,
+            })
 
-            // Перенаправление после успешной регистрации
-            router.push('/dashboard')
+            // Перенаправление после успешной регистрации и автоматического входа
+            router.push('/main')
 
-        } catch (err) {
-            // Ошибка уже обработана в store
+        } catch (err: any) {
             console.error('Ошибка регистрации:', err)
+            setError(err.message || 'Ошибка регистрации. Попробуйте еще раз.')
+        } finally {
+            setLoading(false)
         }
     }
 
     return (
-        <PublicRoute>
             <div className={styles.center}>
                 <div className={styles.wrapper}>
                     <div className={styles.wrap}>
@@ -107,9 +104,9 @@ export default function Registration() {
                     </div>
 
                     <p className={styles.title}>Регистрация</p>
-                    <p className={styles.text}>Создайте аккаунт для ....</p>
+                    <p className={styles.text}>Создайте аккаунт для работы с ReqRoute</p>
 
-                    {/* Показываем общую ошибку из store */}
+                    {/* Показываем общую ошибку */}
                     {error && (
                         <div className={styles.errorMessage}>
                             {error}
@@ -153,38 +150,6 @@ export default function Registration() {
                                     <span className={styles.errorText}>{formErrors.lastName}</span>
                                 )}
                             </div>
-                        </div>
-
-                        {/* Компания и Должность в одной строке */}
-                        <div className={styles.formGroup}>
-                            <label htmlFor="company" className={styles.label}>
-                                Компания
-                            </label>
-                            <input
-                                type="text"
-                                id="company"
-                                name="company"
-                                className={`${styles.input} ${formErrors.company ? styles.inputError : ''}`}
-                                placeholder="ReqRoute / Альфа-Банк / …"
-                                required
-                                disabled={loading}
-                            />
-                            {formErrors.company && (
-                                <span className={styles.errorText}>{formErrors.company}</span>
-                            )}
-                        </div>
-                        <div className={styles.formGroup}>
-                            <label htmlFor="position" className={styles.label}>
-                                Должность (опционально)
-                            </label>
-                            <input
-                                type="text"
-                                id="position"
-                                name="position"
-                                className={styles.input}
-                                placeholder="Product Manager / DevOps / …"
-                                disabled={loading}
-                            />
                         </div>
 
                         {/* E-mail */}
@@ -291,6 +256,5 @@ export default function Registration() {
                     </div>
                 </div>
             </div>
-        </PublicRoute>
     )
 }

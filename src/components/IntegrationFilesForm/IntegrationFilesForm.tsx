@@ -41,7 +41,7 @@ export default function IntegrationFilesForm() {
                 border: "1px solid #E9ECEF"
 
             }}
-            bodyStyle={{ padding: 15 }}
+            styles={{ body: { padding: 15 } }}
         >
             <p className={styles.titleFrom}>Интеграции и документы</p>
 

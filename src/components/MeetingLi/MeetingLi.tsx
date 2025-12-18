@@ -1,5 +1,6 @@
 import { Card, Typography, Button } from 'antd';
 import { CalendarOutlined, VideoCameraOutlined } from '@ant-design/icons';
+import Link from 'next/link';
 import styles from "./styles.module.css";
 
 const { Text } = Typography;
@@ -40,7 +41,7 @@ export default function MeetingLi({
             {/* Платформа и кнопка */}
             <div className={styles.wrap}>
                 <p className={styles.text}>{platform}</p>
-                <a href="#" className={styles.link}>Подробнее</a>
+                <Link href={detailsLink} className={styles.link}>Подробнее</Link>
             </div>
         </Card>
     );

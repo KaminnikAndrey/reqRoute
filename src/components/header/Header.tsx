@@ -16,14 +16,14 @@ export default function Header() {
                             <span>ReqRoute</span>
                 </span>
                 <nav className={styles.nav}>
-                    <Link href="/" className={styles.link}>
+                    <Link href="/main" className={styles.link}>
                         Главная
                     </Link>
-                    <Link href="/" className={styles.link}>
-                        О проекте
+                    <Link href="/createEvent" className={styles.link}>
+                        Создание мероприятия
                     </Link>
-                    <Link href="/" className={styles.link}>
-                        Контакты
+                    <Link href="/voting" className={styles.link}>
+                        Голосование
                     </Link>
                 </nav>
                 </div>
